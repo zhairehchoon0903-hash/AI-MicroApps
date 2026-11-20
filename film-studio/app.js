@@ -2,10 +2,13 @@
   const KEY='openmontage-film-studio-v1', $=id=>document.getElementById(id);
   const emptyState={projects:[],selected:null};let state=load();
   function load(){try{const v=JSON.parse(localStorage.getItem(KEY)||'{}');return {...emptyState,...v,projects:(v.projects||[]).map(p=>({...p,scenes:p.scenes||[],characters:p.characters||[],shots:p.shots||[]}))};}catch{return {...emptyState};}}
-  function persist(){try{localStorage.setItem(KEY,JSON.stringify(state));$('saveState').textContent='● Saved on this device';}catch{$('saveState').textContent='! Storage full — export a backup';}}
+  function persist(){try{localStorage.setItem(KEY,JSON.stringify(state));$('saveState').textContent='● Saved on this device';syncCurrent();}catch{$('saveState').textContent='! Storage full — export a backup';}}
   const id=()=>globalThis.crypto?.randomUUID?.()||'id-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const current=()=>state.projects.find(p=>p.id===state.selected)||state.projects[0]||null;
+  let syncQueue=Promise.resolve();
+  function syncCurrent(){const p=current();if(!p?.backend)return;const data={script_title:p.scriptTitle||'',script:p.script||'',scenes:p.scenes||[],characters:p.characters||[],shots:p.shots||[],genre:p.genre||'Fantasy',logline:p.logline||''};syncQueue=syncQueue.catch(()=>{}).then(()=>fetch('/api/projects/'+encodeURIComponent(p.id)+'/studio',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({data})})).then(r=>{if(!r.ok)throw Error('Server sync failed');$('saveState').textContent='● Synced to OpenMontage';}).catch(()=>{$('saveState').textContent='● Saved locally · server offline';});}
+  document.addEventListener('film-studio-project-created',e=>{const q=e.detail?.project;if(!q?.project_id)return;let p=state.projects.find(x=>x.id===q.project_id);if(!p){p={id:q.project_id,name:q.title,genre:q.genre||'Fantasy',logline:q.logline||'',scriptTitle:'',script:'',scenes:[],characters:[],shots:[],updated:Date.now(),backend:true};state.projects.unshift(p);}else p.backend=true;state.selected=p.id;persist();render();openView('writer');});
   const empty=msg=>'<div class="empty">'+esc(msg)+'</div>';
   function card(p){return `<article class="project-card" data-open="${esc(p.id)}"><div class="project-top"><span class="tag">${esc(p.genre)}</span><span class="project-status">IN DEVELOPMENT</span></div><h3>${esc(p.name)}</h3><p>${esc(p.logline||'Your story is waiting to take shape.')}</p><div class="project-meta">${p.scenes.length} scenes · ${p.characters.length} characters · Updated ${new Date(p.updated).toLocaleDateString()}</div></article>`;}
   function options(){return state.projects.map(p=>`<option value="${esc(p.id)}" ${current()?.id===p.id?'selected':''}>${esc(p.name)}</option>`).join('')||'<option value="">Create a film first</option>';}
