@@ -23,7 +23,7 @@ The server reads a user-authenticated token from `gh auth token` in memory. Alte
 
 - Requires GitHub Copilot Business or Enterprise and Copilot Cloud Agent enabled for the repository. For fine-grained personal access tokens, grant repository **Agent tasks: read and write** to start tasks; read permission is sufficient for status checks.
 - The Cloud Agent tasks API is in public preview and may change.
-- Starting a task may consume Copilot premium requests under the user's plan.
+- Starting a task may consume Copilot AI credits or other metered usage under your organization's billing configuration.
 - Tasks are based on the current Git branch. The app blocks the repository's default branch and `backup/*` branches; use the dedicated feature-branch Codespace.
 - Task creation disables pull-request creation.
 
