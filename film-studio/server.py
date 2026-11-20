@@ -215,26 +215,111 @@ def project_preflight(project_id: str) -> dict:
         raise HTTPException(status_code=409, detail="The project's pipeline manifest is unavailable or invalid.") from exc
 
     artifacts_dir = folder / "artifacts"
+    stages = manifest.get("stages", [])
+    producer_by_artifact = {
+        artifact: stage.get("name")
+        for stage in stages
+        for artifact in (stage.get("produces", []) or [])
+    }
+    # The canonical OpenMontage record is checkpoint_<stage>.json at the
+    # project root. Artifact payloads live inside checkpoint["artifacts"],
+    # not as artifacts/<name>.json files. Use the repository reader so the
+    # same schema and identity validation used by the pipeline is applied.
+    from lib.checkpoint import read_checkpoint
+
+    checkpoint_by_stage: dict[str, dict[str, Any] | None] = {}
+    for stage in stages:
+        stage_name = stage.get("name")
+        try:
+            checkpoint = read_checkpoint(PROJECTS_DIR, project_id, stage_name)
+        except Exception:
+            checkpoint = None
+        if checkpoint and (
+            checkpoint.get("project_id") != project_id
+            or checkpoint.get("pipeline_type") != pipeline_type
+            or checkpoint.get("stage") != stage_name
+        ):
+            checkpoint = None
+        checkpoint_by_stage[stage_name] = checkpoint
+
     stage_results = []
-    for index, stage in enumerate(manifest.get("stages", []), start=1):
+    for index, stage in enumerate(stages, start=1):
+        stage_name = stage.get("name", f"stage-{index}")
         required = stage.get("required_artifacts_in", []) or []
         optional = stage.get("optional_artifacts_in", []) or []
-        present = [name for name in required if (artifacts_dir / f"{name}.json").is_file()]
-        missing = [name for name in required if name not in present]
-        optional_present = [name for name in optional if (artifacts_dir / f"{name}.json").is_file()]
-        tools = sorted(set(stage.get("required_tools", [])) | set(stage.get("optional_tools", [])) | set(stage.get("preferred_tools", [])) | set(stage.get("fallback_tools", [])) | set(stage.get("tools_available", [])))
+        present: list[str] = []
+        missing: list[str] = []
+        optional_present: list[str] = []
+        optional_missing: list[str] = []
+        for artifact_name in required:
+            producer = producer_by_artifact.get(artifact_name)
+            producer_checkpoint = checkpoint_by_stage.get(producer) if producer else None
+            payload = (producer_checkpoint or {}).get("artifacts", {})
+            artifact_ready = bool(
+                producer_checkpoint
+                and producer_checkpoint.get("status") == "completed"
+                and isinstance(payload, dict)
+                and artifact_name in payload
+            )
+            if artifact_ready and producer and bool(next((s.get("human_approval_default", False) for s in stages if s.get("name") == producer), False)):
+                artifact_ready = bool(producer_checkpoint.get("human_approved"))
+            # Some inputs (for example source_media_review) can be supplied
+            # directly as standalone project artifacts instead of stage output.
+            if not artifact_ready and (artifacts_dir / f"{artifact_name}.json").is_file():
+                artifact_ready = True
+            (present if artifact_ready else missing).append(artifact_name)
+        for artifact_name in optional:
+            producer = producer_by_artifact.get(artifact_name)
+            producer_checkpoint = checkpoint_by_stage.get(producer) if producer else None
+            payload = (producer_checkpoint or {}).get("artifacts", {})
+            artifact_ready = bool(
+                producer_checkpoint
+                and producer_checkpoint.get("status") == "completed"
+                and isinstance(payload, dict)
+                and artifact_name in payload
+            )
+            if not artifact_ready and (artifacts_dir / f"{artifact_name}.json").is_file():
+                artifact_ready = True
+            (optional_present if artifact_ready else optional_missing).append(artifact_name)
+
+        tools = sorted(
+            set(stage.get("required_tools", []))
+            | set(stage.get("optional_tools", []))
+            | set(stage.get("preferred_tools", []))
+            | set(stage.get("fallback_tools", []))
+            | set(stage.get("tools_available", []))
+        )
         approval = bool(stage.get("human_approval_default", False))
+        checkpoint = checkpoint_by_stage.get(stage_name)
+        checkpoint_status = checkpoint.get("status") if checkpoint else "not_started"
+        if checkpoint_status == "awaiting_human":
+            status = "awaiting_director_approval"
+        elif checkpoint_status == "completed" and approval and not bool(checkpoint.get("human_approved")):
+            # Surface legacy or manually-authored checkpoints that predate
+            # strict gate enforcement; never silently treat them as approved.
+            status = "awaiting_director_approval"
+        elif checkpoint_status == "completed":
+            status = "completed"
+        elif checkpoint_status in {"in_progress", "failed"}:
+            status = checkpoint_status
+        elif missing:
+            status = "missing_prerequisites"
+        else:
+            status = "ready_for_stage"
         stage_results.append({
             "order": index,
-            "name": stage.get("name", f"stage-{index}"),
+            "name": stage_name,
             "checkpoint_required": bool(stage.get("checkpoint_required", False)),
             "approval_required": approval,
-            "status": "missing_prerequisites" if missing else ("director_approval_required" if approval else "prerequisites_present"),
+            "human_approved": bool(checkpoint.get("human_approved")) if checkpoint else False,
+            "checkpoint_status": checkpoint_status,
+            "status": status,
             "required_artifacts": required,
             "present_artifacts": present,
             "missing_artifacts": missing,
             "optional_artifacts": optional,
             "optional_artifacts_present": optional_present,
+            "optional_artifacts_missing": optional_missing,
             "produces": stage.get("produces", []),
             "tools": tools,
             "review_focus": stage.get("review_focus", []),
@@ -257,13 +342,17 @@ def project_preflight(project_id: str) -> dict:
             cost["note"] = "Cost log exists but could not be read safely."
     missing_count = sum(len(item["missing_artifacts"]) for item in stage_results)
     approval_count = sum(1 for item in stage_results if item["approval_required"])
+    pending_approvals = sum(1 for item in stage_results if item["status"] == "awaiting_director_approval")
+    completed_stages = [item["name"] for item in stage_results if item["status"] == "completed"]
+    next_stage = next((item["name"] for item in stage_results if item["status"] != "completed"), None)
     return {
         "project_id": project_id,
         "title": project.get("title", project_id),
         "pipeline": {"id": pipeline_type, "name": manifest.get("name", pipeline_type), "version": manifest.get("version"), "stability": manifest.get("stability", "unknown")},
         "production": {"mode": orchestration.get("mode", "manifest-driven"), "max_revisions_per_stage": orchestration.get("max_revisions_per_stage"), "max_send_backs": orchestration.get("max_send_backs"), "max_wall_time_minutes": orchestration.get("max_wall_time_minutes")},
         "budget": {"cap_usd": budget_cap, **cost, "remaining_estimate_usd": round(budget_cap - cost["spent_usd"] - cost["reserved_usd"], 4)},
-        "summary": {"stage_count": len(stage_results), "stages_with_missing_artifacts": sum(1 for item in stage_results if item["missing_artifacts"]), "missing_required_artifacts": missing_count, "director_approval_gates": approval_count},
+        "summary": {"stage_count": len(stage_results), "stages_with_missing_artifacts": sum(1 for item in stage_results if item["missing_artifacts"]), "missing_required_artifacts": missing_count, "director_approval_gates": approval_count, "pending_director_approvals": pending_approvals, "completed_stages": len(completed_stages)},
+        "next_stage": next_stage,
         "stages": stage_results,
         "saved_studio_data": {"script_present": bool(studio.get("script", "").strip()), "scene_count": len(studio.get("scenes", [])), "character_count": len(studio.get("characters", [])), "shot_count": len(studio.get("shots", []))},
         "generation_enabled": False,
