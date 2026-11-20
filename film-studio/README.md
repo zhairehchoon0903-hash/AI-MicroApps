@@ -1,4 +1,4 @@
-# OpenMontage Film Studio
+¶∑©j∑ù# OpenMontage Film Studio
 
 A mobile-first director workspace with a local API bridge to the repository's real OpenMontage pipeline catalog and project library.
 
@@ -57,3 +57,6 @@ The prompt authorizes read-only inspection and non-paid planning only. It expres
 Creating a production project only scaffolds its folder and initial metadata. It does **not** launch an agent, call an AI provider, generate images/video/audio, download media, or render. The budget cap planning metadata, not a price quote. Generation and rendering require separate implementation, provider configuration, explicit director approval, and cost controls.
 
 The browser workspace currently stores its creative notes in local storage on that device. The API also exposes a validated `PUT` endpoint for server-side script, scene, character, and shot data; full browser-to-project synchronization is still in progress. Backlot remains the read-only production monitor.
+
+
+For GitHub Copilot Chat in Codespaces, the repository also provides the `/film-studio-agent` prompt in `.github/prompts/film-studio-agent.prompt.md`. After preparing a handoff, invoke that prompt and provide the project ID if it is not already clear. It reads the saved local project handoff and follows the repository's agent contract; it does not bypass approval gates.
