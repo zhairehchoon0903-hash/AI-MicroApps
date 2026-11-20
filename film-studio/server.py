@@ -112,7 +112,7 @@ def projects() -> dict:
 @app.post("/api/projects", status_code=201)
 def create_project(payload: ProjectCreate) -> dict:
     try:
-        manifest = load_pipeline(payload.pipeline_type)
+        load_pipeline(payload.pipeline_type)
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Unknown or invalid pipeline: {payload.pipeline_type}") from exc
 
@@ -120,13 +120,25 @@ def create_project(payload: ProjectCreate) -> dict:
     if not title:
         raise HTTPException(status_code=422, detail="Project title cannot be blank.")
     base = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")[:48] or "film"
-    project_id = base
-    if (PROJECTS_DIR / project_id).exists():
-        project_id = f"{base}-{uuid.uuid4().hex[:6]}"
 
-    project_dir = PROJECTS_DIR / project_id
+    # Claim a unique directory atomically. Never clean up a directory unless
+    # this request successfully created it; a collision must preserve its owner.
+    project_dir: Path | None = None
+    project_id = ""
+    for attempt in range(6):
+        suffix = "" if attempt == 0 else f"-{uuid.uuid4().hex[:6]}"
+        candidate_id = f"{base}{suffix}"
+        candidate_dir = PROJECTS_DIR / candidate_id
+        try:
+            candidate_dir.mkdir(parents=True, exist_ok=False)
+            project_id, project_dir = candidate_id, candidate_dir
+            break
+        except FileExistsError:
+            continue
+    if project_dir is None:
+        raise HTTPException(status_code=409, detail="Could not reserve a unique project folder. Please try again.")
+
     try:
-        project_dir.mkdir(parents=True, exist_ok=False)
         for folder in ("artifacts", "assets/images", "assets/video", "assets/audio", "renders", "history"):
             (project_dir / folder).mkdir(parents=True, exist_ok=True)
         now = datetime.now(timezone.utc).isoformat()
@@ -204,6 +216,11 @@ def save_studio(project_id: str, payload: StudioSave) -> dict:
     allowed = {"script_title", "script", "scenes", "characters", "shots", "genre", "logline"}
     if set(data) - allowed:
         raise HTTPException(status_code=400, detail="Unsupported project fields.")
+    try:
+        if len(json.dumps(data, ensure_ascii=False)) > 2_000_000:
+            raise HTTPException(status_code=413, detail="Project notes exceed the 2 MB limit.")
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail="Project data must be JSON serializable.") from exc
     for key in ("scenes", "characters", "shots"):
         if key in data and (not isinstance(data[key], list) or len(data[key]) > 2000):
             raise HTTPException(status_code=422, detail=f"{key} must be a list with at most 2000 entries.")
