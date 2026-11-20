@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#10131b">
+  <meta name="description" content="A director's workspace for planning and managing AI film productions.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./styles.css">
+  <title>Film Studio — OpenMontage</title>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#" aria-label="Film Studio home"><span class="brand-mark">F</span><span><b>FILM STUDIO</b><small>by OpenMontage</small></span></a>
+      <div class="workspace-label">WORKSPACE</div>
+      <button class="nav-item active" data-view="home"><span>◫</span> Overview</button>
+      <button class="nav-item" data-view="projects"><span>▤</span> My Films</button>
+      <button class="nav-item" data-view="writer"><span>✎</span> Script Room</button>
+      <button class="nav-item" data-view="scenes"><span>▦</span> Scene Board</button>
+      <div class="sidebar-bottom"><div class="connection"><i></i><span><b>Studio workspace</b><small>Local project data</small></span></div><small class="version">EARLY ACCESS · v0.1</small></div>
+    </aside>
+    <main class="main">
+      <header class="topbar"><button class="menu-btn" id="menuBtn" aria-label="Open menu">☰</button><div class="crumb">OPENMONTAGE <span>/</span> <b id="crumbCurrent">OVERVIEW</b></div><div class="top-actions"><span class="save-state" id="saveState">● Saved on this device</span><button class="avatar" title="Director workspace">D</button></div></header>
+      <section class="content">
+        <section class="view active" id="view-home">
+          <div class="eyebrow">YOUR CREATIVE COMMAND CENTER</div>
+          <div class="hero-row"><div><h1>Good to see you,<br><em>Director.</em></h1><p class="sub">Every great film begins with a clear vision. Let's bring yours to life.</p></div><button class="primary" id="newProjectTop">＋ New film project</button></div>
+          <div class="stat-grid"><article class="stat"><span>YOUR FILMS</span><strong id="statProjects">0</strong><small>Projects in your studio</small></article><article class="stat"><span>SCENES PLANNED</span><strong id="statScenes">0</strong><small>Across all projects</small></article><article class="stat"><span>IN PRODUCTION</span><strong id="statActive">0</strong><small>Projects you're developing</small></article></div>
+          <div class="section-head"><div><div class="eyebrow">THE WORK IN PROGRESS</div><h2>Recent films</h2></div><button class="text-btn" data-goto="projects">View all →</button></div>
+          <div class="project-grid" id="recentProjects"></div>
+          <div class="section-head pipeline-head"><div><div class="eyebrow">PRODUCTION WORKFLOW</div><h2>From idea to final cut</h2></div></div>
+          <div class="workflow"><div><span>01</span><b>Develop</b><small>Concept, story & script</small></div><div><span>02</span><b>Plan</b><small>Scenes, shots & continuity</small></div><div><span>03</span><b>Create</b><small>Visuals, voices & music</small></div><div><span>04</span><b>Assemble</b><small>Edit, review & render</small></div></div>
+          <div class="notice"><b>Honest status:</b> This first version saves your planning work on this device. AI generation, provider billing, and automated rendering will be connected to OpenMontage in later integration steps. Nothing is being generated or charged yet.</div>
+        </section>
+        <section class="view" id="view-projects"><div class="eyebrow">YOUR PRODUCTION LIBRARY</div><div class="section-title-row"><div><h1>My films</h1><p class="sub">Keep every story, production note, and scene in one place.</p></div><button class="primary" id="newProject">＋ New film</button></div><div class="project-grid" id="allProjects"></div></section>
+        <section class="view" id="view-writer"><div class="eyebrow">STORY DEVELOPMENT</div><h1>Script room</h1><p class="sub">Shape the story before production begins.</p><div class="panel"><label for="projectSelect">CURRENT FILM</label><select id="projectSelect"></select><label for="scriptTitle">SCRIPT TITLE</label><input id="scriptTitle" placeholder="Give this story a title"><label for="scriptText">SCRIPT / STORY NOTES</label><textarea id="scriptText" rows="16" placeholder="Write your opening scene, dialogue, story beats, or director's notes here..."></textarea><div class="panel-foot"><span id="scriptStatus">Changes save automatically on this device.</span><button class="primary" id="saveScript">Save script</button></div></div></section>
+        <section class="view" id="view-scenes"><div class="eyebrow">VISUAL STORYTELLING</div><h1>Scene board</h1><p class="sub">Break your film into scenes and track what each moment needs.</p><div class="scene-toolbar"><select id="sceneProjectSelect"></select><button class="primary" id="addScene">＋ Add scene</button></div><div id="sceneList" class="scene-list"></div></section>
+      </section>
+      <footer>OPENMONTAGE FILM STUDIO <span>Built for the director's vision.</span></footer>
+    </main>
+  </div>
+  <dialog id="projectDialog"><form method="dialog" id="projectForm"><div class="eyebrow">START SOMETHING MEANINGFUL</div><h2>New film project</h2><label for="projectName">FILM TITLE</label><input id="projectName" required maxlength="90" placeholder="e.g. The Last Bloodline"><label for="projectGenre">GENRE / STYLE</label><select id="projectGenre"><option>Fantasy</option><option>Drama</option><option>Documentary</option><option>Action / Adventure</option><option>Animation</option><option>Other</option></select><label for="projectLogline">THE STORY IN ONE SENTENCE</label><textarea id="projectLogline" rows="3" placeholder="What is this film about?"></textarea><div class="dialog-actions"><button class="secondary" value="cancel">Cancel</button><button class="primary" id="createProject" value="default">Create project</button></div></form></dialog>
+  <script src="./app.js"></script>
+</body>
+</html>
