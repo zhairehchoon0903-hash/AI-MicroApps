@@ -21,7 +21,7 @@ import { CollageBurst, CollageBurstProps } from "./CollageBurst";
 import { LyricOverlay, LyricOverlayProps, calculateLyricOverlayMetadata } from "./LyricOverlay";
 
 // ---------------------------------------------------------------------------
-// Theme System — prevents every video from looking like dark fintech
+// Theme System â prevents every video from looking like dark fintech
 // ---------------------------------------------------------------------------
 
 export interface ThemeConfig {
@@ -108,7 +108,7 @@ export const THEMES: Record<string, ThemeConfig> = {
   },
 };
 
-// Default theme when none is specified — uses the existing dark style for backwards compatibility
+// Default theme when none is specified â uses the existing dark style for backwards compatibility
 export const DEFAULT_THEME = THEMES["flat-motion-graphics"];
 
 export function resolveTheme(props: Record<string, unknown>): ThemeConfig {
@@ -191,7 +191,6 @@ export const Root: React.FC = () => {
 />
 
 
-      />
       <Composition
         id="TalkingHead"
 component={TalkingHead}
