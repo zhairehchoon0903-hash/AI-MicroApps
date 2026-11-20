@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import hmac
 import sys
 import uuid
 from datetime import datetime, timezone
@@ -19,7 +20,8 @@ WEB_DIR = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from backlot.state import PROJECTS_DIR, list_projects, load_board_state
@@ -27,6 +29,26 @@ from lib.pipeline_loader import list_pipelines, load_pipeline
 
 app = FastAPI(title="OpenMontage Film Studio API", version="0.1.0")
 PROJECT_ID = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
+API_TOKEN = os.environ.get("FILM_STUDIO_TOKEN", "").strip()
+LOOPBACK_HOSTS = {"127.0.0.1", "::1", "localhost", "testclient"}
+
+
+@app.middleware("http")
+async def protect_api(request: Request, call_next):
+    """Require a bearer token for remote access; keep default loopback use simple."""
+    if request.url.path.startswith("/api/") and request.url.path != "/api/health":
+        client_host = request.client.host if request.client else ""
+        configured_host = os.environ.get("FILM_STUDIO_HOST", "127.0.0.1")
+        remote_binding = configured_host not in LOOPBACK_HOSTS
+        if remote_binding and not API_TOKEN:
+            return JSONResponse(status_code=503, content={"detail": "Remote API access is disabled until FILM_STUDIO_TOKEN is configured."})
+        if API_TOKEN:
+            supplied = request.headers.get("authorization", "")
+            if not hmac.compare_digest(supplied, f"Bearer {API_TOKEN}"):
+                return JSONResponse(status_code=401, content={"detail": "A valid Film Studio access token is required."})
+        elif client_host not in LOOPBACK_HOSTS:
+            return JSONResponse(status_code=403, content={"detail": "Remote API access is disabled. Configure FILM_STUDIO_TOKEN before exposing the service."})
+    return await call_next(request)
 
 
 class ProjectCreate(BaseModel):
@@ -66,8 +88,8 @@ def health() -> dict:
         "ok": True,
         "service": "OpenMontage Film Studio",
         "version": app.version,
-        "projects_dir": str(PROJECTS_DIR),
         "generation_enabled": False,
+        "auth_required": bool(API_TOKEN),
         "note": "Planning and project scaffolding only. No provider calls or render jobs are started.",
     }
 
@@ -422,4 +444,7 @@ app.mount("/", StaticFiles(directory=str(WEB_DIR), html=True), name="film-studio
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host=os.environ.get("FILM_STUDIO_HOST", "127.0.0.1"), port=int(os.environ.get("FILM_STUDIO_PORT", "4173")))
+    host = os.environ.get("FILM_STUDIO_HOST", "127.0.0.1")
+    if host not in LOOPBACK_HOSTS and not API_TOKEN:
+        raise SystemExit("Refusing remote binding without authentication. Set FILM_STUDIO_TOKEN before FILM_STUDIO_HOST=0.0.0.0.")
+    uvicorn.run(app, host=host, port=int(os.environ.get("FILM_STUDIO_PORT", "4173")))
