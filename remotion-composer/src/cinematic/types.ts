@@ -59,6 +59,9 @@ export interface CinematicCaptionConfig {
 export interface CinematicRendererProps {
   [key: string]: unknown;
   scenes: CinematicScene[];
+  /** Output dimensions; defaults to the landscape renderer size. */
+  width?: number;
+  height?: number;
   titleFontSize?: number;
   titleWidth?: number;
   signalLineCount?: number;

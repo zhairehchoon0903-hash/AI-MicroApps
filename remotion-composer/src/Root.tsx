@@ -177,6 +177,23 @@ export const Root: React.FC = () => {
         calculateMetadata={calculateCinematicMetadata}
       />
       <Composition
+        id="LastBloodlineVertical"
+        component={CinematicRenderer}
+        durationInFrames={30 * 30}
+        fps={30}
+        width={1080}
+        height={1920}
+        defaultProps={{
+          scenes: [],
+          width: 1080,
+          height: 1920,
+          titleFontSize: 64,
+          titleWidth: 900,
+          signalLineCount: 24,
+        }}
+        calculateMetadata={calculateCinematicMetadata}
+      />
+      <Composition
         id="TalkingHead"
         component={TalkingHead}
         durationInFrames={30 * 300}
