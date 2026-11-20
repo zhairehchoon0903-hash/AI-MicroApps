@@ -10,13 +10,16 @@ From the repository root:
 python film-studio/server.py
 ```
 
-Open **http://127.0.0.1:4173** on the same computer. To access it from a phone on the same trusted Wi-Fi network, start it with:
+Open **http://127.0.0.1:4173** on the same computer. For phone or Codespaces access on a trusted private network, configure a bearer token and bind the server to the network interface:
 
 ```bash
-FILM_STUDIO_HOST=0.0.0.0 python film-studio/server.py
+export FILM_STUDIO_TOKEN="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')"
+echo "$FILM_STUDIO_TOKEN"  # keep this private; enter it in the app
+export FILM_STUDIO_HOST=0.0.0.0
+python film-studio/server.py
 ```
 
-Then open `http://YOUR-COMPUTER-LAN-IP:4173` on the phone. This is a development server with no user authentication; use it only on a trusted private network and never expose it directly to the public internet.
+Then open `http://YOUR-COMPUTER-LAN-IP:4173` on the phone and paste the same token into the Film Studio access field. The token is kept in the current browser tab's session storage. The server is loopback-only by default and refuses remote binding without a token. Keep it on a trusted private network; do not expose this development server directly to the public internet.
 
 ## Working features
 

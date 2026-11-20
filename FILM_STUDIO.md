@@ -21,7 +21,7 @@ The first director-facing app lives in `film-studio/` as a standalone, mobile-fi
 - [x] Inspect actual pipeline manifests, checkpoint artifacts, stage order, and approval evidence in Production Preflight.
 - [x] Discover locally configured providers and composition runtimes through the existing tool registry without executing providers.
 - [x] Display recorded project costs and the project's planning budget cap.
-- [ ] Add authenticated API access before exposing the service beyond a trusted local environment.
+- [x] Require a bearer token before remote API access; keep the default server loopback-only.
 - [ ] Add itemized cost estimates and explicit approval UI before any paid operation.
 - [ ] Map Film Studio screenplay/storyboard data into schema-valid OpenMontage stage artifacts.
 - [ ] Connect the director workspace to the agent-driven stage workflow and Remotion rendering.

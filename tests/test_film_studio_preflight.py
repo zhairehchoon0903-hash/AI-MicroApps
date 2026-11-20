@@ -104,3 +104,15 @@ def test_capability_report_is_registry_summary_only(monkeypatch, film_server):
     assert result["composition_runtimes"]["remotion"] is True
     assert result["paid_calls_started"] is False
     assert result["generation_enabled"] is False
+
+
+def test_api_requires_bearer_token_when_configured(monkeypatch, film_server):
+    from fastapi.testclient import TestClient
+    module, _checkpoints = film_server
+    monkeypatch.setattr(module, "API_TOKEN", "test-director-token")
+    monkeypatch.setattr(module, "list_pipelines", lambda: [])
+    client = TestClient(module.app)
+
+    assert client.get("/api/pipelines").status_code == 401
+    response = client.get("/api/pipelines", headers={"Authorization": "Bearer test-director-token"})
+    assert response.status_code == 200
