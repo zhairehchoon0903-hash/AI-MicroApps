@@ -21,9 +21,9 @@
   },
   "renderer": {
     "package": "remotion-composer",
-    "composition_id": "CinematicRenderer",
+    "composition_id": "LastBloodlineVertical",
     "scene_schema": "remotion-composer/src/cinematic/types.ts",
-    "note": "The existing renderer assembles local video clips, title cards, soundtrack, music and captions. It does not generate source footage.",
+    "note": "Uses the native 1080x1920 portrait composition. The renderer assembles local video clips, title cards, soundtrack, music and captions; it does not generate source footage.",
     "output_width": 1080,
     "output_height": 1920,
     "safe_area": {
