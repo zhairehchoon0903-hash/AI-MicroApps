@@ -217,3 +217,92 @@ def test_cloud_agent_start_embeds_handoff_and_never_authorizes_paid_media(film_s
     saved = json.loads((tmp_path / "preflight-test" / "artifacts" / "cloud_agent_task.json").read_text())
     assert saved["task_id"] == "task-123"
     assert "test-user-token" not in json.dumps(saved)
+
+
+
+def test_local_copilot_connection_check_does_not_start_a_task(film_server, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    module, _checkpoints = film_server
+    monkeypatch.setattr(module, "_local_copilot_status", lambda: ({
+        "installed": True, "can_start": True, "provider": "GitHub Copilot CLI",
+        "version": "copilot 1.0", "note": "Connection check only."
+    }, "/usr/bin/copilot"))
+    client = TestClient(module.app)
+    response = client.get("/api/agent/local-connection")
+
+    assert response.status_code == 200
+    assert response.json()["installed"] is True
+    assert response.json()["note"] == "Connection check only."
+
+
+def test_local_agent_start_requires_explicit_director_confirmation(film_server):
+    from fastapi.testclient import TestClient
+
+    module, _checkpoints = film_server
+    client = TestClient(module.app)
+    response = client.post("/api/projects/preflight-test/local-agent-task", json={})
+
+    assert response.status_code == 400
+    assert "Explicit director confirmation" in response.json()["detail"]
+
+
+def test_local_agent_uses_read_only_copilot_tools_and_records_output(film_server, monkeypatch, tmp_path):
+    from fastapi.testclient import TestClient
+
+    module, _checkpoints = film_server
+    module.create_director_handoff("preflight-test")
+    monkeypatch.setattr(module, "_local_copilot_status", lambda: ({
+        "installed": True, "can_start": True, "provider": "GitHub Copilot CLI"
+    }, "/usr/bin/copilot"))
+    monkeypatch.setattr(module, "_build_agent_prompt", lambda _id, _handoff, _session, host: "read-only planning prompt" if host == "local" else "wrong host")
+    monkeypatch.setenv("COPILOT_ALLOW_ALL", "true")
+    captured = {}
+
+    class FakeInput:
+        def __init__(self):
+            self.value = ""
+            self.closed = False
+        def write(self, value):
+            self.value += value
+        def close(self):
+            self.closed = True
+
+    class FakeProcess:
+        pid = 45678
+        def __init__(self):
+            self.stdin = FakeInput()
+        def poll(self):
+            return 0
+
+    fake_process = FakeProcess()
+
+    def fake_popen(command, **kwargs):
+        captured["command"] = command
+        captured["environment"] = kwargs["env"]
+        captured["stdin"] = kwargs["stdin"]
+        kwargs["stdout"].write("Checkpoint audit complete. No files changed.\n")
+        kwargs["stdout"].flush()
+        return fake_process
+
+    monkeypatch.setattr(module.subprocess, "Popen", fake_popen)
+    client = TestClient(module.app)
+    response = client.post("/api/projects/preflight-test/local-agent-task", json={"confirm_start": True})
+
+    assert response.status_code == 200
+    assert response.json()["started"] is True
+    assert "--allow-tool=read" in captured["command"]
+    assert "--deny-tool=shell,write,url,memory" in captured["command"]
+    assert "-p" not in captured["command"]
+    assert fake_process.stdin.value == "read-only planning prompt"
+    assert fake_process.stdin.closed is True
+    assert captured["stdin"] == module.subprocess.PIPE
+    assert "--no-ask-user" in captured["command"]
+    assert "--allow-all" not in captured["command"]
+    assert "COPILOT_ALLOW_ALL" not in captured["environment"]
+    assert response.json()["task"]["render_authorized"] is False
+
+    status = client.get("/api/projects/preflight-test/local-agent-task")
+    assert status.status_code == 200
+    assert status.json()["task"]["state"] == "completed"
+    assert "Checkpoint audit complete" in status.json()["output"]

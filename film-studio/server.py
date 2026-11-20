@@ -1,6 +1,6 @@
 """Local Film Studio API for OpenMontage.
 
-This service exposes validated pipeline metadata, safe project scaffolding, and an explicitly confirmed GitHub Copilot Cloud Agent planning bridge.
+This service exposes validated pipeline metadata, safe project scaffolding, and explicitly confirmed read-only GitHub Copilot CLI/Cloud Agent planning bridges.
 It never authorizes paid media generation or render jobs.
 """
 from __future__ import annotations

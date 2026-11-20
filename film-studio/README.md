@@ -46,6 +46,16 @@ Select a project in Production preflight and choose **Prepare director handoff**
 
 Endpoint: `POST /api/projects/{project_id}/director-handoff`. It only writes the local JSON package; it does not start an agent, reserve budget, call providers, generate media, download assets, or render. Execution and spending authorization remain false.
 
+## Local GitHub Copilot CLI agent (recommended)
+
+Film Studio can run the official GitHub Copilot CLI inside the Codespace. This is available on all Copilot plans, subject to organization policy. Install Node.js 22 or later, then run `npm install -g @github/copilot`. Start `copilot` once, enter `/login`, complete sign-in, and approve workspace trust if prompted. Exit the interactive CLI after setup.
+
+In **Production Engine → Production preflight**, prepare the director handoff, check **Local Copilot CLI**, then choose **Start local read-only agent** and confirm. The server launches `copilot -p` as a local process in the repository, records its log and task status, and lets you refresh the result. The command explicitly allows only the CLI's `read` tool and denies `shell`, `write`, `url`, and `memory`; it does not use `--allow-all`. The local task receives the director handoff plus a fresh preflight and canonical checkpoint snapshot, and can also inspect local project files. Authentication and workspace trust are not tested by the connection check; complete the one-time interactive setup first.
+
+Starting a task may consume Copilot AI credits or other metered usage under your plan. No media generation, paid production providers, downloads, budget reservations, file edits, or rendering are authorized by this read-only task.
+
+GitHub CLI references: https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli and https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-programmatic-reference
+
 ## GitHub Copilot Cloud Agent connection
 
 Film Studio can connect to GitHub's official Copilot Cloud Agent tasks API. In the Codespace, make sure GitHub CLI is authenticated as your user (`gh auth status`; if needed, run `gh auth login`). The server reads the user token with `gh auth token` in memory; it never sends the token to the browser or writes it into project files. Alternatively, configure `GH_TOKEN` with a user-to-server token. Do not use a server-to-server installation token: GitHub's agent tasks API requires a user-to-server token.
@@ -58,7 +68,7 @@ GitHub API reference: https://docs.github.com/en/copilot/how-tos/use-copilot-age
 
 ## Safety boundary
 
-Creating a production project only scaffolds its folder and initial metadata. Checking the Copilot connection does not launch an agent. Starting a confirmed cloud task uses GitHub Copilot and may consume plan usage, but the task is explicitly limited to read-only inspection and non-paid planning. It does **not** authorize media generation, paid provider calls, downloads, budget reservations, or rendering. The budget cap is planning metadata, not a price quote.
+Creating a production project only scaffolds its folder and initial metadata. Checking the Copilot connection does not launch an agent. Starting a confirmed local or cloud agent task uses GitHub Copilot and may consume plan usage, but the task is explicitly limited to read-only inspection and non-paid planning. It does **not** authorize media generation, paid provider calls, downloads, budget reservations, or rendering. The budget cap is planning metadata, not a price quote.
 
 The browser workspace currently stores its creative notes in local storage on that device. The API also exposes a validated `PUT` endpoint for server-side script, scene, character, and shot data; full browser-to-project synchronization is still in progress. Backlot remains the read-only production monitor.
 
