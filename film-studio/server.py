@@ -1,7 +1,7 @@
 """Local Film Studio API for OpenMontage.
 
-This service exposes validated pipeline metadata and safe project scaffolding.
-It deliberately does not invoke agents, generation providers, or render jobs.
+This service exposes validated pipeline metadata, safe project scaffolding, and an explicitly confirmed GitHub Copilot Cloud Agent planning bridge.
+It never authorizes paid media generation or render jobs.
 """
 from __future__ import annotations
 
@@ -11,6 +11,11 @@ import re
 import hmac
 import sys
 import uuid
+import shutil
+import subprocess
+import urllib.error
+import urllib.parse
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -63,6 +68,10 @@ class StudioSave(BaseModel):
     data: dict[str, Any]
 
 
+class AgentTaskStart(BaseModel):
+    confirm_start: bool = False
+
+
 def _project_dir(project_id: str) -> Path:
     if not PROJECT_ID.fullmatch(project_id):
         raise HTTPException(status_code=400, detail="Invalid project id.")
@@ -73,6 +82,109 @@ def _project_dir(project_id: str) -> Path:
     if not target.is_dir():
         raise HTTPException(status_code=404, detail="Project not found.")
     return target
+
+
+
+
+class AgentHostError(RuntimeError):
+    pass
+
+
+def _github_user_token() -> str:
+    """Read a user-authenticated GitHub CLI token without returning it to the browser."""
+    token = os.environ.get("GH_TOKEN", "").strip()
+    if token:
+        return token
+    gh = shutil.which("gh")
+    if not gh:
+        raise AgentHostError("GitHub CLI is not installed or authenticated. In the Codespace, run `gh auth status` and sign in with `gh auth login` if needed.")
+    try:
+        result = subprocess.run([gh, "auth", "token"], cwd=ROOT, capture_output=True, text=True, timeout=10, check=False)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise AgentHostError("GitHub CLI authentication could not be checked.") from exc
+    token = result.stdout.strip() if result.returncode == 0 else ""
+    if not token:
+        raise AgentHostError("GitHub CLI has no usable user token. Run `gh auth login` in the Codespace.")
+    return token
+
+
+def _github_api_request(method: str, path: str, token: str, payload: dict | None = None) -> dict:
+    body = json.dumps(payload).encode("utf-8") if payload is not None else None
+    request = urllib.request.Request(
+        "https://api.github.com" + path, data=body, method=method,
+        headers={
+            "Accept": "application/vnd.github+json",
+            "Authorization": f"Bearer {token}",
+            "X-GitHub-Api-Version": "2026-03-10",
+            "Content-Type": "application/json",
+            "User-Agent": "OpenMontage-Film-Studio",
+        },
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:
+            raw = response.read().decode("utf-8")
+    except urllib.error.HTTPError as exc:
+        try:
+            error_data = json.loads(exc.read().decode("utf-8"))
+        except (ValueError, OSError):
+            error_data = {}
+        message = str(error_data.get("message", ""))
+        if exc.code in (401, 403):
+            raise AgentHostError("GitHub denied Copilot Cloud Agent access. Confirm Copilot Business or Enterprise access, the token's Agent tasks permission, and that Cloud Agent is enabled for this repository.") from exc
+        if exc.code == 404:
+            raise AgentHostError("GitHub's Copilot Cloud Agent endpoint was not found for this repository or account. Confirm Cloud Agent availability and repository settings.") from exc
+        raise AgentHostError(f"GitHub Cloud Agent request failed (HTTP {exc.code}). {message[:240]}") from exc
+    except (urllib.error.URLError, TimeoutError) as exc:
+        raise AgentHostError("Could not reach GitHub's API. Check the Codespace network connection and try again.") from exc
+    try:
+        return json.loads(raw) if raw else {}
+    except ValueError as exc:
+        raise AgentHostError("GitHub returned an unexpected response while contacting Copilot Cloud Agent.") from exc
+
+
+def _agent_repository_context() -> dict:
+    repository = os.environ.get("GITHUB_REPOSITORY", "").strip()
+    branch = os.environ.get("FILM_STUDIO_AGENT_BASE_REF", "").strip()
+    if not repository:
+        try:
+            remote = subprocess.run(["git", "remote", "get-url", "origin"], cwd=ROOT, capture_output=True, text=True, timeout=5, check=True).stdout.strip()
+        except (OSError, subprocess.SubprocessError) as exc:
+            raise AgentHostError("Could not identify the GitHub repository. Open Film Studio from a GitHub Codespace for this repository.") from exc
+        match = re.search(r"github\.com[:/]([^/]+)/([^/]+?)(?:\.git)?$", remote)
+        if not match:
+            raise AgentHostError("The origin remote is not a GitHub repository.")
+        repository = f"{match.group(1)}/{match.group(2)}"
+    if not branch:
+        try:
+            branch = subprocess.run(["git", "branch", "--show-current"], cwd=ROOT, capture_output=True, text=True, timeout=5, check=True).stdout.strip()
+        except (OSError, subprocess.SubprocessError) as exc:
+            raise AgentHostError("Could not identify the current Git branch.") from exc
+    parts = repository.split("/", 1)
+    if len(parts) != 2 or not all(re.fullmatch(r"[A-Za-z0-9_.-]+", part) for part in parts) or not branch:
+        raise AgentHostError("The repository or base branch could not be validated.")
+    return {"owner": parts[0], "repo": parts[1], "base_ref": branch}
+
+
+def _agent_connection() -> tuple[dict, str | None]:
+    try:
+        token = _github_user_token()
+        context = _agent_repository_context()
+        user = _github_api_request("GET", "/user", token)
+        repo = _github_api_request("GET", f"/repos/{context['owner']}/{context['repo']}", token)
+        _github_api_request("GET", f"/agents/repos/{context['owner']}/{context['repo']}/tasks?per_page=1", token)
+        default_branch = str(repo.get("default_branch") or "main")
+        branch = context["base_ref"]
+        safe_branch = branch != default_branch and branch not in {"main", "master"} and not branch.startswith("backup/")
+        reason = "" if safe_branch else f"For safety, cloud tasks cannot start from the default or backup branch ({branch}). Open the feature branch Codespace first."
+        return ({
+            "connected": True, "can_start": safe_branch, "username": user.get("login", "GitHub user"),
+            "repository": f"{context['owner']}/{context['repo']}", "base_ref": branch,
+            "default_branch": default_branch, "reason": reason,
+            "provider": "GitHub Copilot Cloud Agent",
+            "note": "Connection check only. No agent task has been started.",
+        }, token)
+    except AgentHostError as exc:
+        return ({"connected": False, "can_start": False, "reason": str(exc), "provider": "GitHub Copilot Cloud Agent", "note": "Connection check only. No agent task has been started."}, None)
 
 
 def _atomic_json(path: Path, value: dict) -> None:
@@ -554,6 +666,112 @@ def create_director_handoff(project_id: str) -> dict:
         "handoff": handoff,
         "message": "Director handoff and agent-session prompt prepared. This does not start an agent or authorize paid operations, generation, downloads, or rendering.",
     }
+
+
+@app.get("/api/agent/connection")
+def agent_connection_status() -> dict:
+    """Check user-token and Copilot Cloud Agent availability without starting a task."""
+    status, _token = _agent_connection()
+    return status
+
+
+@app.post("/api/projects/{project_id}/agent-task")
+def start_cloud_agent_task(project_id: str, body: AgentTaskStart) -> dict:
+    """Start a separately confirmed, read-only Copilot Cloud Agent planning task."""
+    if not body.confirm_start:
+        raise HTTPException(status_code=400, detail="Explicit director confirmation is required before starting a Copilot Cloud Agent task.")
+    folder = _project_dir(project_id)
+    handoff_path = folder / "artifacts" / "director_handoff.json"
+    session_path = folder / "artifacts" / "agent_session.md"
+    if not handoff_path.is_file() or not session_path.is_file():
+        raise HTTPException(status_code=409, detail="Prepare the director handoff before starting a cloud agent task.")
+    try:
+        handoff = json.loads(handoff_path.read_text(encoding="utf-8"))
+        session_prompt = session_path.read_text(encoding="utf-8")
+    except (OSError, json.JSONDecodeError) as exc:
+        raise HTTPException(status_code=500, detail="The saved director handoff could not be read.") from exc
+    metadata_path = folder / "artifacts" / "cloud_agent_task.json"
+    if metadata_path.is_file():
+        try:
+            previous = json.loads(metadata_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            previous = {}
+        if previous.get("state") in {"queued", "in_progress", "waiting_for_user", "idle"}:
+            raise HTTPException(status_code=409, detail="A Copilot Cloud Agent task is already active for this project. Refresh its status before starting another.")
+    connection, token = _agent_connection()
+    if not connection.get("connected") or not token:
+        raise HTTPException(status_code=503, detail=connection.get("reason", "Copilot Cloud Agent is not connected."))
+    if not connection.get("can_start"):
+        raise HTTPException(status_code=409, detail=connection.get("reason", "The current branch is not approved for cloud agent work."))
+    embedded_handoff = json.dumps(handoff, ensure_ascii=False, indent=2)
+    if len(embedded_handoff) > 50000 or len(session_prompt) > 30000:
+        raise HTTPException(status_code=413, detail="The project handoff is too large to send safely as one cloud-agent task. Reduce the script or project notes and prepare the handoff again.")
+    prompt = "\n".join([
+        "# OpenMontage Film Studio — director-authorized cloud agent planning task",
+        "This is a real GitHub Copilot Cloud Agent session. Work only in the supplied repository and on the requested base branch.",
+        "", "## Strict task scope",
+        "Perform a READ-ONLY audit and non-paid planning only. Do not edit, create, delete, or commit repository files. Do not open a pull request. Do not run production stages.",
+        "Do not call paid AI providers, generate images/video/audio, download media, reserve or spend budget, or render. These actions are NOT authorized.",
+        "If local project files or canonical checkpoints are absent from the repository, explicitly report that limitation; do not invent their contents or checkpoint state.",
+        "Read AGENTS.md, AGENT_GUIDE.md, the selected pipeline manifest, checkpoint protocol, and relevant stage-director skills before making recommendations.",
+        "Report the actual available checkpoint position, next valid stage if evidence exists, blockers, and the exact non-paid next-step plan. Stop at every human approval gate.",
+        "", "## Project-specific agent session instructions", session_prompt,
+        "", "## Embedded director handoff (source of intent, not a canonical pipeline artifact)", embedded_handoff,
+        "", "## Final response format",
+        "Return: (1) repository and project state inspected, (2) evidence-backed checkpoint position or missing-data warning, (3) next valid stage, (4) blockers and director decisions needed, (5) non-paid plan. Confirm that no files were changed and no paid operations were attempted.",
+    ])
+    context = _agent_repository_context()
+    try:
+        response = _github_api_request("POST", f"/agents/repos/{context['owner']}/{context['repo']}/tasks", token, {
+            "prompt": prompt, "base_ref": context["base_ref"], "create_pull_request": False,
+        })
+    except AgentHostError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    task_id = str(response.get("id") or response.get("task_id") or "")
+    if not task_id or not re.fullmatch(r"[A-Za-z0-9._-]+", task_id):
+        raise HTTPException(status_code=502, detail="GitHub accepted an unexpected task response; no task ID was returned.")
+    record = {
+        "task_id": task_id, "state": response.get("state", "queued"),
+        "repository": connection["repository"], "base_ref": connection["base_ref"],
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "provider": "GitHub Copilot Cloud Agent", "create_pull_request": False,
+        "paid_media_operations_authorized": False, "generation_authorized": False, "render_authorized": False,
+    }
+    for key in ("html_url", "url"):
+        if response.get(key):
+            record[key] = response[key]
+    _atomic_json(metadata_path, record)
+    return {"started": True, "task": record, "message": "Copilot Cloud Agent task submitted. It is restricted by its prompt to read-only inspection and non-paid planning; no media generation or rendering is authorized."}
+
+
+@app.get("/api/projects/{project_id}/agent-task")
+def get_cloud_agent_task_status(project_id: str) -> dict:
+    folder = _project_dir(project_id)
+    metadata_path = folder / "artifacts" / "cloud_agent_task.json"
+    if not metadata_path.is_file():
+        raise HTTPException(status_code=404, detail="No cloud agent task has been started for this project.")
+    try:
+        record = json.loads(metadata_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise HTTPException(status_code=500, detail="Saved cloud agent task metadata could not be read.") from exc
+    task_id = str(record.get("task_id") or "")
+    if not re.fullmatch(r"[A-Za-z0-9._-]+", task_id):
+        raise HTTPException(status_code=500, detail="Saved cloud agent task ID is invalid.")
+    connection, token = _agent_connection()
+    if not connection.get("connected") or not token:
+        return {"task": record, "refreshed": False, "message": connection.get("reason", "GitHub connection is unavailable; showing last saved task status.")}
+    try:
+        context = _agent_repository_context()
+        current = _github_api_request("GET", f"/agents/repos/{context['owner']}/{context['repo']}/tasks/{urllib.parse.quote(task_id, safe='')}", token)
+    except AgentHostError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    record["state"] = current.get("state", record.get("state", "unknown"))
+    record["updated_at"] = datetime.now(timezone.utc).isoformat()
+    for key in ("html_url", "url", "pull_request_url", "result"):
+        if current.get(key) is not None:
+            record[key] = current[key]
+    _atomic_json(metadata_path, record)
+    return {"task": record, "refreshed": True, "message": "Latest Copilot Cloud Agent task status retrieved."}
 
 
 # API routes are registered before this catch-all static app.

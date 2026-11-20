@@ -149,3 +149,68 @@ def test_director_handoff_creates_agent_session_prompt_with_real_skill_paths(fil
     assert handoff["production_contract"]["stages"][1]["director_skill"] == "skills/pipelines/cinematic/proposal-director.md"
     saved_prompt = (tmp_path / "preflight-test" / "artifacts" / "agent_session.md").read_text()
     assert saved_prompt == prompt + "\n"
+
+
+
+def test_cloud_agent_task_requires_explicit_director_confirmation(film_server, tmp_path):
+    from fastapi.testclient import TestClient
+
+    module, _checkpoints = film_server
+    client = TestClient(module.app)
+    response = client.post("/api/projects/preflight-test/agent-task", json={})
+
+    assert response.status_code == 400
+    assert "Explicit director confirmation" in response.json()["detail"]
+
+
+def test_cloud_agent_connection_check_never_starts_a_task(film_server, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    module, _checkpoints = film_server
+    monkeypatch.setattr(module, "_agent_connection", lambda: ({
+        "connected": True, "can_start": True, "repository": "owner/repo",
+        "base_ref": "feature/test", "note": "Connection check only."
+    }, "test-user-token"))
+    client = TestClient(module.app)
+    response = client.get("/api/agent/connection")
+
+    assert response.status_code == 200
+    assert response.json()["connected"] is True
+    assert "token" not in json.dumps(response.json()).lower()
+
+
+def test_cloud_agent_start_embeds_handoff_and_never_authorizes_paid_media(film_server, monkeypatch, tmp_path):
+    from fastapi.testclient import TestClient
+
+    module, _checkpoints = film_server
+    module.create_director_handoff("preflight-test")
+    monkeypatch.setattr(module, "_agent_connection", lambda: ({
+        "connected": True, "can_start": True, "repository": "owner/repo",
+        "base_ref": "feature/test", "default_branch": "main"
+    }, "test-user-token"))
+    captured = {}
+
+    def fake_github_request(method, path, token, payload=None):
+        captured.update({"method": method, "path": path, "token": token, "payload": payload})
+        return {"id": "task-123", "state": "queued"}
+
+    monkeypatch.setattr(module, "_github_api_request", fake_github_request)
+    monkeypatch.setattr(module, "_agent_repository_context", lambda: {
+        "owner": "owner", "repo": "repo", "base_ref": "feature/test"
+    })
+    client = TestClient(module.app)
+    response = client.post("/api/projects/preflight-test/agent-task", json={"confirm_start": True})
+
+    assert response.status_code == 200
+    assert response.json()["started"] is True
+    assert captured["method"] == "POST"
+    assert captured["path"] == "/agents/repos/owner/repo/tasks"
+    assert captured["payload"]["base_ref"] == "feature/test"
+    assert captured["payload"]["create_pull_request"] is False
+    assert "A saved screenplay" in captured["payload"]["prompt"]
+    assert "Do not call paid AI providers" in captured["payload"]["prompt"]
+    assert response.json()["task"]["paid_media_operations_authorized"] is False
+    assert response.json()["task"]["generation_authorized"] is False
+    saved = json.loads((tmp_path / "preflight-test" / "artifacts" / "cloud_agent_task.json").read_text())
+    assert saved["task_id"] == "task-123"
+    assert "test-user-token" not in json.dumps(saved)

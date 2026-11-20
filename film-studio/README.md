@@ -1,4 +1,4 @@
-¶∑©j∑ù# OpenMontage Film Studio
+¬¶¬∑¬©j¬∑¬ù# OpenMontage Film Studio
 
 A mobile-first director workspace with a local API bridge to the repository's real OpenMontage pipeline catalog and project library.
 
@@ -46,15 +46,19 @@ Select a project in Production preflight and choose **Prepare director handoff**
 
 Endpoint: `POST /api/projects/{project_id}/director-handoff`. It only writes the local JSON package; it does not start an agent, reserve budget, call providers, generate media, download assets, or render. Execution and spending authorization remain false.
 
-## Agent-session handoff
+## GitHub Copilot Cloud Agent connection
 
-Preparing a director handoff also writes `projects/<project_id>/artifacts/agent_session.md`. The prompt names the exact repository guide, selected pipeline manifest, executive-producer skill (when declared), stage-director skills, checkpoint protocol, and project artifact paths. The **Copy agent session prompt** action copies these instructions for pasting into the OpenMontage coding-agent session in the Codespace. This is an explicit handoff to the agent host, not a claim that the Film Studio starts an agent process; the repository currently provides agent instructions and tools, not a callable agent-session server.
+Film Studio can connect to GitHub's official Copilot Cloud Agent tasks API. In the Codespace, make sure GitHub CLI is authenticated as your user (`gh auth status`; if needed, run `gh auth login`). The server reads the user token with `gh auth token` in memory; it never sends the token to the browser or writes it into project files. Alternatively, configure `GH_TOKEN` with a user-to-server token. Do not use a server-to-server installation token: GitHub's agent tasks API requires a user-to-server token.
 
-The prompt authorizes read-only inspection and non-paid planning only. It expressly prohibits paid provider calls, generation, downloads, and rendering until separately approved. The selected pipeline manifest remains the authority for stage order and human-approval gates.
+The account needs GitHub Copilot Business or Enterprise, and Copilot Cloud Agent must be enabled for the repository. For a fine-grained personal access token, grant the repository **Agent tasks: read and write** permission to start tasks (read permission is sufficient to list/check them). Open **Production Engine ‚Üí Production preflight**, select a project, prepare the director handoff, check the connection, then choose **Start cloud agent task** and confirm. The API task is submitted against the current non-default, non-backup branch, with pull-request creation disabled. Starting a task may consume Copilot premium requests under your plan. GitHub documents the tasks API as public preview and subject to change.
+
+Each task receives the saved agent-session instructions and the director handoff data. The current integration is intentionally limited to read-only repository inspection and non-paid planning: no file edits, commits, pull requests, paid provider calls, media generation, downloads, budget reservations, or rendering are authorized. It records the task ID locally and lets you refresh the task state. Missing local project checkpoints are reported as missing rather than invented. The existing **Copy agent session prompt** action remains available as a manual fallback in Copilot Chat.
+
+GitHub API reference: https://docs.github.com/en/copilot/how-tos/use-copilot-agents/cloud-agent/use-cloud-agent-via-the-api
 
 ## Safety boundary
 
-Creating a production project only scaffolds its folder and initial metadata. It does **not** launch an agent, call an AI provider, generate images/video/audio, download media, or render. The budget cap planning metadata, not a price quote. Generation and rendering require separate implementation, provider configuration, explicit director approval, and cost controls.
+Creating a production project only scaffolds its folder and initial metadata. Checking the Copilot connection does not launch an agent. Starting a confirmed cloud task uses GitHub Copilot and may consume plan usage, but the task is explicitly limited to read-only inspection and non-paid planning. It does **not** authorize media generation, paid provider calls, downloads, budget reservations, or rendering. The budget cap is planning metadata, not a price quote.
 
 The browser workspace currently stores its creative notes in local storage on that device. The API also exposes a validated `PUT` endpoint for server-side script, scene, character, and shot data; full browser-to-project synchronization is still in progress. Backlot remains the read-only production monitor.
 
