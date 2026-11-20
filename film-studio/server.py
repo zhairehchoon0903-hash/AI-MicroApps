@@ -104,6 +104,26 @@ def pipelines() -> dict:
     return {"pipelines": result}
 
 
+@app.get("/api/capabilities")
+def capabilities() -> dict:
+    """Report locally discovered provider/runtime readiness without executing tools."""
+    try:
+        from tools.tool_registry import registry
+        report = registry.provider_menu_summary()
+    except Exception as exc:
+        # Do not leak provider configuration or environment details to clients.
+        raise HTTPException(status_code=503, detail="The local tool registry could not be inspected. Check the server logs and runtime dependencies.") from exc
+    return {
+        "capabilities": report.get("capabilities", []),
+        "composition_runtimes": report.get("composition_runtimes", {}),
+        "setup_offers": report.get("setup_offers", []),
+        "runtime_warnings": report.get("runtime_warnings", []),
+        "discovery_mode": "local_dependency_checks",
+        "paid_calls_started": False,
+        "generation_enabled": False,
+    }
+
+
 @app.get("/api/projects")
 def projects() -> dict:
     return {"projects": list_projects()}
