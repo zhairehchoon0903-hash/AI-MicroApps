@@ -3,17 +3,36 @@
     "title": "THE LAST BLOODLINE",
     "project_id": "the-last-bloodline",
     "format": "feature-film",
-    "aspect_ratio": "16:9",
+    "aspect_ratio": "9:16",
     "fps": 30,
     "language": "en",
     "status": "preproduction",
-    "target_opening_duration_seconds": 360
+    "target_opening_duration_seconds": 360,
+    "resolution": {
+      "width": 1080,
+      "height": 1920,
+      "label": "Full HD vertical"
+    },
+    "platform_targets": [
+      "Instagram Reels",
+      "YouTube Shorts",
+      "TikTok"
+    ]
   },
   "renderer": {
     "package": "remotion-composer",
     "composition_id": "CinematicRenderer",
     "scene_schema": "remotion-composer/src/cinematic/types.ts",
-    "note": "The existing renderer assembles local video clips, title cards, soundtrack, music and captions. It does not generate source footage."
+    "note": "The existing renderer assembles local video clips, title cards, soundtrack, music and captions. It does not generate source footage.",
+    "output_width": 1080,
+    "output_height": 1920,
+    "safe_area": {
+      "top_percent": 12,
+      "bottom_percent": 18,
+      "left_percent": 8,
+      "right_percent": 8,
+      "rule": "Keep faces, essential action, titles and subtitles inside the central portrait-safe region; leave additional bottom space for platform UI."
+    }
   },
   "visual_bible": {
     "tone": [
@@ -36,6 +55,13 @@
       "Auren is primarily a swordsman; magic enhances and follows his sword technique.",
       "Keep the ancient kingdom's architecture, royal emblem and banners consistent across all shots.",
       "Keep the identity of the enemy and the full bloodline history unrevealed in the opening."
+    ],
+    "vertical_framing": [
+      "Compose natively for 9:16 portrait; do not plan widescreen shots for center-cropping.",
+      "Keep the primary subject near the vertical center and preserve headroom and footroom.",
+      "For kingdoms and battlefields, use layered foreground-to-background depth and vertical camera movement to communicate scale.",
+      "For sword combat, keep both fighters and blade paths inside the portrait frame; favor medium and close coverage over extremely wide lateral choreography.",
+      "Place subtitles and titles within the safe area, away from the top and bottom platform interface zones."
     ]
   },
   "sequences": [
@@ -61,7 +87,9 @@
           "description": "A vast aerial reveal of the ancient kingdom in its golden age, mountains and waterfalls framing the royal capital.",
           "camera": "ultra-wide aerial push-in",
           "media": "assets/video/LB-001-kingdom-aerial.mp4",
-          "status": "awaiting-footage"
+          "status": "awaiting-footage",
+          "framing": "native-9:16-portrait",
+          "composition_note": "Design for a vertical 9:16 frame; do not crop from 16:9. Keep the main subject/action and important visual information within the portrait-safe area."
         },
         {
           "id": "LB-002",
@@ -70,7 +98,9 @@
           "description": "The camera descends over marble bridges, towers and royal banners moving in a gentle morning wind.",
           "camera": "descending crane / drone move",
           "media": "assets/video/LB-002-capital-descent.mp4",
-          "status": "awaiting-footage"
+          "status": "awaiting-footage",
+          "framing": "native-9:16-portrait",
+          "composition_note": "Design for a vertical 9:16 frame; do not crop from 16:9. Keep the main subject/action and important visual information within the portrait-safe area."
         },
         {
           "id": "LB-003",
@@ -79,7 +109,9 @@
           "description": "Ordinary citizens, merchants and children fill a sunlit market street; life feels safe and prosperous.",
           "camera": "slow street-level tracking shot",
           "media": "assets/video/LB-003-market-life.mp4",
-          "status": "awaiting-footage"
+          "status": "awaiting-footage",
+          "framing": "native-9:16-portrait",
+          "composition_note": "Design for a vertical 9:16 frame; do not crop from 16:9. Keep the main subject/action and important visual information within the portrait-safe area."
         },
         {
           "id": "LB-004",
@@ -88,7 +120,9 @@
           "description": "A majestic view of the royal castle, its banners and emblem catching the sunlight.",
           "camera": "low-angle architectural reveal",
           "media": "assets/video/LB-004-royal-castle.mp4",
-          "status": "awaiting-footage"
+          "status": "awaiting-footage",
+          "framing": "native-9:16-portrait",
+          "composition_note": "Design for a vertical 9:16 frame; do not crop from 16:9. Keep the main subject/action and important visual information within the portrait-safe area."
         },
         {
           "id": "LB-005",
@@ -97,14 +131,18 @@
           "description": "A child pauses as a distant bell rings; the smile fades and the street quiets.",
           "camera": "intimate close-up, shallow depth of field",
           "media": "assets/video/LB-005-bell-reaction.mp4",
-          "status": "awaiting-footage"
+          "status": "awaiting-footage",
+          "framing": "native-9:16-portrait",
+          "composition_note": "Design for a vertical 9:16 frame; do not crop from 16:9. Keep the main subject/action and important visual information within the portrait-safe area."
         },
         {
           "id": "LB-006",
           "duration": 5,
           "type": "title",
           "text": "A KINGDOM FORGOTTEN",
-          "status": "ready-for-render"
+          "status": "ready-for-render",
+          "framing": "native-9:16-portrait",
+          "composition_note": "Design for a vertical 9:16 frame; do not crop from 16:9. Keep the main subject/action and important visual information within the portrait-safe area."
         }
       ]
     },
@@ -120,7 +158,9 @@
           "description": "The capital at night as fire spreads across rooftops beneath a blood-red sky.",
           "camera": "wide city panorama",
           "media": "assets/video/LB-007-burning-capital.mp4",
-          "status": "awaiting-footage"
+          "status": "awaiting-footage",
+          "framing": "native-9:16-portrait",
+          "composition_note": "Design for a vertical 9:16 frame; do not crop from 16:9. Keep the main subject/action and important visual information within the portrait-safe area."
         },
         {
           "id": "LB-008",
@@ -129,7 +169,9 @@
           "description": "Soldiers clash in smoke and fire; keep violence intense but readable, not gratuitous.",
           "camera": "ground-level tracking",
           "media": "assets/video/LB-008-battle-streets.mp4",
-          "status": "awaiting-footage"
+          "status": "awaiting-footage",
+          "framing": "native-9:16-portrait",
+          "composition_note": "Design for a vertical 9:16 frame; do not crop from 16:9. Keep the main subject/action and important visual information within the portrait-safe area."
         },
         {
           "id": "LB-009",
@@ -138,7 +180,9 @@
           "description": "A wounded king stands before the throne as an old warrior enters carrying a bloodstained sword.",
           "camera": "slow dolly into two-shot",
           "media": "assets/video/LB-009-king-and-warrior.mp4",
-          "status": "awaiting-footage"
+          "status": "awaiting-footage",
+          "framing": "native-9:16-portrait",
+          "composition_note": "Design for a vertical 9:16 frame; do not crop from 16:9. Keep the main subject/action and important visual information within the portrait-safe area."
         },
         {
           "id": "LB-010",
@@ -169,7 +213,9 @@
               "character": "KING",
               "text": "Even if the world remembers us as monsters... let the blood survive."
             }
-          ]
+          ],
+          "framing": "native-9:16-portrait",
+          "composition_note": "Design for a vertical 9:16 frame; do not crop from 16:9. Keep the main subject/action and important visual information within the portrait-safe area."
         },
         {
           "id": "LB-011",
@@ -178,7 +224,9 @@
           "description": "A palace explosion silhouettes the king and warrior; cut to black on the impact.",
           "camera": "silhouette wide shot",
           "media": "assets/video/LB-011-palace-fall.mp4",
-          "status": "awaiting-footage"
+          "status": "awaiting-footage",
+          "framing": "native-9:16-portrait",
+          "composition_note": "Design for a vertical 9:16 frame; do not crop from 16:9. Keep the main subject/action and important visual information within the portrait-safe area."
         }
       ]
     },
@@ -200,7 +248,9 @@
           "description": "Centuries later: wind moves through broken pillars and overgrown palace ruins.",
           "camera": "slow aerial drift",
           "media": "assets/video/LB-012-ruins-aerial.mp4",
-          "status": "awaiting-footage"
+          "status": "awaiting-footage",
+          "framing": "native-9:16-portrait",
+          "composition_note": "Design for a vertical 9:16 frame; do not crop from 16:9. Keep the main subject/action and important visual information within the portrait-safe area."
         },
         {
           "id": "LB-013",
@@ -209,7 +259,9 @@
           "description": "A weathered royal statue lies broken beside the remains of a throne room.",
           "camera": "slow lateral dolly",
           "media": "assets/video/LB-013-broken-statue.mp4",
-          "status": "awaiting-footage"
+          "status": "awaiting-footage",
+          "framing": "native-9:16-portrait",
+          "composition_note": "Design for a vertical 9:16 frame; do not crop from 16:9. Keep the main subject/action and important visual information within the portrait-safe area."
         },
         {
           "id": "LB-014",
@@ -218,7 +270,9 @@
           "description": "Auren Vale walks alone along a mountain path toward the ruins, carrying his sword.",
           "camera": "rear tracking shot, gradual reveal",
           "media": "assets/video/LB-014-auren-arrives.mp4",
-          "status": "awaiting-footage"
+          "status": "awaiting-footage",
+          "framing": "native-9:16-portrait",
+          "composition_note": "Design for a vertical 9:16 frame; do not crop from 16:9. Keep the main subject/action and important visual information within the portrait-safe area."
         },
         {
           "id": "LB-015",
@@ -233,7 +287,9 @@
               "character": "WHISPER (V.O.)",
               "text": "Auren..."
             }
-          ]
+          ],
+          "framing": "native-9:16-portrait",
+          "composition_note": "Design for a vertical 9:16 frame; do not crop from 16:9. Keep the main subject/action and important visual information within the portrait-safe area."
         }
       ]
     },
@@ -249,7 +305,9 @@
           "description": "Auren enters a ruined temple and approaches an ancient symbol carved into a stone monument.",
           "camera": "wide-to-medium slow dolly",
           "media": "assets/video/LB-016-temple-symbol.mp4",
-          "status": "awaiting-footage"
+          "status": "awaiting-footage",
+          "framing": "native-9:16-portrait",
+          "composition_note": "Design for a vertical 9:16 frame; do not crop from 16:9. Keep the main subject/action and important visual information within the portrait-safe area."
         },
         {
           "id": "LB-017",
@@ -258,7 +316,9 @@
           "description": "His hand touches the symbol; flashes of a throne, burning crown and battlefield interrupt reality.",
           "camera": "macro close-up into rapid vision inserts",
           "media": "assets/video/LB-017-memory-flash.mp4",
-          "status": "awaiting-footage"
+          "status": "awaiting-footage",
+          "framing": "native-9:16-portrait",
+          "composition_note": "Design for a vertical 9:16 frame; do not crop from 16:9. Keep the main subject/action and important visual information within the portrait-safe area."
         },
         {
           "id": "LB-018",
@@ -277,7 +337,9 @@
               "character": "AUREN",
               "text": "What was that?"
             }
-          ]
+          ],
+          "framing": "native-9:16-portrait",
+          "composition_note": "Design for a vertical 9:16 frame; do not crop from 16:9. Keep the main subject/action and important visual information within the portrait-safe area."
         }
       ]
     },
@@ -293,7 +355,9 @@
           "description": "A hidden sanctuary reveals an ancient sword resting untouched at its center.",
           "camera": "slow reveal from behind Auren",
           "media": "assets/video/LB-019-ancient-sword-reveal.mp4",
-          "status": "awaiting-footage"
+          "status": "awaiting-footage",
+          "framing": "native-9:16-portrait",
+          "composition_note": "Design for a vertical 9:16 frame; do not crop from 16:9. Keep the main subject/action and important visual information within the portrait-safe area."
         },
         {
           "id": "LB-020",
@@ -302,7 +366,9 @@
           "description": "A shadow creature attacks; Auren defends himself with disciplined swordsmanship and is driven backward.",
           "camera": "dynamic but legible sword-fight coverage",
           "media": "assets/video/LB-020-first-attack.mp4",
-          "status": "awaiting-footage"
+          "status": "awaiting-footage",
+          "framing": "native-9:16-portrait",
+          "composition_note": "Design for a vertical 9:16 frame; do not crop from 16:9. Keep the main subject/action and important visual information within the portrait-safe area."
         },
         {
           "id": "LB-021",
@@ -311,7 +377,9 @@
           "description": "Auren takes the ancient sword; blue-white energy runs along the blade and follows his movements.",
           "camera": "heroic medium shot into blade close-up",
           "media": "assets/video/LB-021-sword-awakens.mp4",
-          "status": "awaiting-footage"
+          "status": "awaiting-footage",
+          "framing": "native-9:16-portrait",
+          "composition_note": "Design for a vertical 9:16 frame; do not crop from 16:9. Keep the main subject/action and important visual information within the portrait-safe area."
         },
         {
           "id": "LB-022",
@@ -330,14 +398,18 @@
               "character": "UNKNOWN VOICE (V.O.)",
               "text": "The last bloodline."
             }
-          ]
+          ],
+          "framing": "native-9:16-portrait",
+          "composition_note": "Design for a vertical 9:16 frame; do not crop from 16:9. Keep the main subject/action and important visual information within the portrait-safe area."
         },
         {
           "id": "LB-023",
           "duration": 8,
           "type": "title",
           "text": "THE LAST BLOODLINE",
-          "status": "ready-for-render"
+          "status": "ready-for-render",
+          "framing": "native-9:16-portrait",
+          "composition_note": "Design for a vertical 9:16 frame; do not crop from 16:9. Keep the main subject/action and important visual information within the portrait-safe area."
         }
       ]
     }
