@@ -6,6 +6,7 @@ It deliberately does not invoke agents, generation providers, or render jobs.
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
 import uuid
@@ -112,7 +113,7 @@ def projects() -> dict:
 def create_project(payload: ProjectCreate) -> dict:
     try:
         manifest = load_pipeline(payload.pipeline_type)
-    except (FileNotFoundError, ValueError, Exception) as exc:
+    except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Unknown or invalid pipeline: {payload.pipeline_type}") from exc
 
     title = payload.title.strip()
@@ -163,11 +164,11 @@ def create_project(payload: ProjectCreate) -> dict:
             "updated_at": now,
         })
     except Exception:
-        # Do not leave a half-created directory behind after a failed scaffold.
         import shutil
         shutil.rmtree(project_dir, ignore_errors=True)
         raise
 
+    selected = next((p for p in pipelines()["pipelines"] if p["id"] == payload.pipeline_type), None)
     return {
         "project": {
             "project_id": project_id,
@@ -179,9 +180,8 @@ def create_project(payload: ProjectCreate) -> dict:
             "production_status": "planning",
             "generation_authorized": False,
             "stages": [
-                {"name": s["name"], "status": "pending", "approval_required": s["approval_required"]}
-                for s in pipelines()["pipelines"] if s["id"] == payload.pipeline_type
-                for s in s["stages"]
+                {"name": stage["name"], "status": "pending", "approval_required": stage["approval_required"]}
+                for stage in (selected or {}).get("stages", [])
             ],
         },
         "message": "Project folder created. No AI generation or rendering was started.",
@@ -218,10 +218,10 @@ def save_studio(project_id: str, payload: StudioSave) -> dict:
     return {"saved": True, "updated_at": current["updated_at"]}
 
 
-# Serve the mobile-first web app from the same origin as its API.
+# API routes are registered before this catch-all static app.
 app.mount("/", StaticFiles(directory=str(WEB_DIR), html=True), name="film-studio")
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=4173)
+    uvicorn.run(app, host=os.environ.get("FILM_STUDIO_HOST", "127.0.0.1"), port=int(os.environ.get("FILM_STUDIO_PORT", "4173")))
