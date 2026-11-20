@@ -4,7 +4,10 @@ import {
   CinematicRenderer,
   calculateCinematicMetadata,
 } from "./CinematicRenderer";
-import { signalFromTomorrowWithMusicFixture } from "./cinematic/fixtures";
+import {
+  signalFromTomorrowWithMusicFixture,
+  aurenValeFixture,
+} from "./cinematic/fixtures";
 import { TalkingHead, TalkingHeadProps } from "./TalkingHead";
 import {
   TitledVideo,
@@ -175,10 +178,30 @@ export const Root: React.FC = () => {
         height={1080}
         defaultProps={signalFromTomorrowWithMusicFixture}
         calculateMetadata={calculateCinematicMetadata}
+/>
+<Composition
+  id="AurenVale"
+  component={CinematicRenderer}
+  durationInFrames={30 * 30}
+  fps={30}
+  width={1920}
+  height={1080}
+  defaultProps={aurenValeFixture}
+  calculateMetadata={calculateCinematicMetadata}
+/>
+
+
       />
       <Composition
         id="TalkingHead"
-        component={TalkingHead}
+component={TalkingHead}
+
+
+
+ 
+
+
+
         durationInFrames={30 * 300}
         fps={30}
         width={1080}

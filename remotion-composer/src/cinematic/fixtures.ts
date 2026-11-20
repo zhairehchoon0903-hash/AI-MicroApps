@@ -81,3 +81,64 @@ export const signalFromTomorrowWithMusicFixture: CinematicRendererProps = {
     },
   ],
 };
+
+
+export const aurenValeFixture: CinematicRendererProps = {
+  titleFontSize: 78,
+  titleWidth: 1320,
+  signalLineCount: 18,
+  scenes: [
+    {
+      id: "auren-scene-1",
+      kind: "video",
+      startSeconds: 0,
+      durationSeconds: 5,
+      src: staticFile("video/last-bloodline/forgotten-kingdom.mp4"),
+      tone: "cold",
+    },
+    {
+      id: "auren-title-1",
+      kind: "title",
+      startSeconds: 5,
+      durationSeconds: 3,
+      text: "A KINGDOM FORGOTTEN.",
+      accent: "#d6f1ff",
+      intensity: 1,
+    },
+    {
+      id: "auren-scene-2",
+      kind: "video",
+      startSeconds: 8,
+      durationSeconds: 6,
+      src: staticFile("video/last-bloodline/auren-awakening.mp4"),
+      tone: "steel",
+    },
+    {
+      id: "auren-title-2",
+      kind: "title",
+      startSeconds: 14,
+      durationSeconds: 3,
+      text: "A POWER LONG BURIED.",
+      accent: "#d6f1ff",
+      intensity: 1,
+    },
+    {
+      id: "auren-scene-3",
+      kind: "video",
+      startSeconds: 17,
+      durationSeconds: 7,
+      src: staticFile("video/last-bloodline/first-battle.mp4"),
+      tone: "cold",
+    },
+    {
+      id: "auren-title-3",
+      kind: "title",
+      startSeconds: 24,
+      durationSeconds: 3,
+      text: "THE LAST BLOODLINE.",
+      accent: "#d6f1ff",
+      intensity: 1,
+    },
+  ],
+};
+
