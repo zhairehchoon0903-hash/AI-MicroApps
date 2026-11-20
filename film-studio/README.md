@@ -40,6 +40,12 @@ The endpoint is `GET /api/projects/{project_id}/preflight`.
 
 The Production Engine also exposes `GET /api/capabilities`, backed by OpenMontage's `registry.provider_menu_summary()`. It reports locally discovered provider availability, composition runtimes, setup offers, and runtime warnings. This is dependency/configuration discovery only; it does not call a provider's `.execute()` method or make paid API requests.
 
+## Director handoff
+
+Select a project in Production preflight and choose **Prepare director handoff**. The API packages the saved screenplay, scene plan, character continuity notes, shot plan, project brief, budget cap, and pipeline stage contracts/director-skill paths into `projects/<project_id>/artifacts/director_handoff.json`. This is a non-canonical planning artifact. The OpenMontage agent remains the orchestrator and must read `AGENT_GUIDE.md`, the selected manifest, checkpoint protocol, and each stage director skill before stage work.
+
+Endpoint: `POST /api/projects/{project_id}/director-handoff`. It only writes the local JSON package; it does not start an agent, reserve budget, call providers, generate media, download assets, or render. Execution and spending authorization remain false.
+
 ## Safety boundary
 
 Creating a production project only scaffolds its folder and initial metadata. It does **not** launch an agent, call an AI provider, generate images/video/audio, download media, or render. The budget cap planning metadata, not a price quote. Generation and rendering require separate implementation, provider configuration, explicit director approval, and cost controls.

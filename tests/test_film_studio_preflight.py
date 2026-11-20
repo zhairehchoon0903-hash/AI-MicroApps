@@ -116,3 +116,20 @@ def test_api_requires_bearer_token_when_configured(monkeypatch, film_server):
     assert client.get("/api/pipelines").status_code == 401
     response = client.get("/api/pipelines", headers={"Authorization": "Bearer test-director-token"})
     assert response.status_code == 200
+
+
+
+def test_director_handoff_packages_planning_without_authorizing_execution(film_server, tmp_path):
+    module, _checkpoints = film_server
+    result = module.create_director_handoff("preflight-test")
+    handoff = result["handoff"]
+
+    assert result["saved"] is True
+    assert result["artifact_path"] == "artifacts/director_handoff.json"
+    assert handoff["artifact_type"] == "director_handoff"
+    assert handoff["canonical_pipeline_artifact"] is False
+    assert handoff["director_intent"]["script"] == "A saved screenplay"
+    assert handoff["production_contract"]["stages"][1]["human_approval_required"] is True
+    assert all(value is False for key, value in handoff["authorization"].items() if key.endswith("_authorized"))
+    saved = json.loads((tmp_path / "preflight-test" / "artifacts" / "director_handoff.json").read_text())
+    assert saved["project"]["pipeline_id"] == "cinematic"

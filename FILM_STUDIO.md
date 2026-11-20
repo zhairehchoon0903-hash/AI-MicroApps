@@ -24,7 +24,8 @@ The first director-facing app lives in `film-studio/` as a standalone, mobile-fi
 - [x] Require a bearer token before remote API access; keep the default server loopback-only.
 - [ ] Add itemized cost estimates and explicit approval UI before any paid operation.
 - [ ] Map Film Studio screenplay/storyboard data into schema-valid OpenMontage stage artifacts.
-- [ ] Connect the director workspace to the agent-driven stage workflow and Remotion rendering.
+- [x] Package saved director intent and manifest stage contracts into a non-canonical handoff artifact; keep execution and spending unauthorized.
+- [ ] Connect the approved handoff to an actual agent session and Remotion rendering.
 
 ## Milestone 3 — agent-driven production
 

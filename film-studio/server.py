@@ -438,6 +438,83 @@ def save_studio(project_id: str, payload: StudioSave) -> dict:
     return {"saved": True, "updated_at": current["updated_at"]}
 
 
+@app.post("/api/projects/{project_id}/director-handoff")
+def create_director_handoff(project_id: str) -> dict:
+    """Save a non-canonical planning package for the existing OpenMontage agent."""
+    folder = _project_dir(project_id)
+    try:
+        project = json.loads((folder / "project.json").read_text(encoding="utf-8"))
+        studio_path = folder / "artifacts" / "film_studio.json"
+        studio = json.loads(studio_path.read_text(encoding="utf-8")) if studio_path.is_file() else {}
+    except (OSError, json.JSONDecodeError) as exc:
+        raise HTTPException(status_code=500, detail="Project planning data could not be read.") from exc
+    pipeline_id = str(project.get("pipeline_type") or studio.get("pipeline_type") or "")
+    try:
+        manifest = load_pipeline(pipeline_id)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail="The project's pipeline manifest is unavailable.") from exc
+    stages = []
+    for stage in manifest.get("stages", []):
+        if not isinstance(stage, dict) or not stage.get("name"):
+            continue
+        stages.append({
+            "name": stage["name"],
+            "director_skill": stage.get("skill") or f"skills/pipelines/{pipeline_id}/{stage['name']}-director.md",
+            "produces": stage.get("produces", []),
+            "required_artifacts_in": stage.get("required_artifacts_in", []),
+            "human_approval_required": bool(stage.get("human_approval_default", False)),
+            "review_focus": stage.get("review_focus", []),
+            "tools_available": stage.get("tools_available", []),
+        })
+    handoff = {
+        "schema_version": 1,
+        "artifact_type": "director_handoff",
+        "canonical_pipeline_artifact": False,
+        "project": {
+            "project_id": project_id,
+            "title": project.get("title", studio.get("title", project_id)),
+            "genre": studio.get("genre", (project.get("film_studio") or {}).get("genre", "")),
+            "logline": studio.get("logline", (project.get("film_studio") or {}).get("logline", "")),
+            "pipeline_id": pipeline_id,
+            "budget_cap_usd": (project.get("film_studio") or {}).get("budget_cap_usd", studio.get("budget_cap_usd")),
+        },
+        "director_intent": {key: studio.get(key, default) for key, default in {
+            "script_title": "", "script": "", "scenes": [], "characters": [], "shots": []
+        }.items()},
+        "production_contract": {
+            "pipeline_version": manifest.get("version"),
+            "stages": stages,
+            "orchestration_owner": "OpenMontage AI agent",
+            "required_reading": [
+                "AGENT_GUIDE.md", "pipeline_defs/<pipeline>.yaml",
+                "skills/meta/checkpoint-protocol.md", "the selected stage director skill before each stage",
+            ],
+            "rules": [
+                "Follow manifest stage order and each stage director skill.",
+                "Use canonical stage artifacts and validated checkpoints.",
+                "Stop at every manifest-required human approval gate.",
+                "Inspect costs before paid operations; never silently change provider, model, or render runtime.",
+                "Do not start asset generation before approval of the production plan.",
+            ],
+        },
+        "authorization": {
+            "agent_execution_authorized": False,
+            "generation_authorized": False,
+            "paid_operations_authorized": False,
+            "render_authorized": False,
+            "requires_separate_director_approval": True,
+        },
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    _atomic_json(folder / "artifacts" / "director_handoff.json", handoff)
+    return {
+        "saved": True,
+        "artifact_path": "artifacts/director_handoff.json",
+        "handoff": handoff,
+        "message": "Director handoff prepared only. No agent, provider, paid operation, or render was started.",
+    }
+
+
 # API routes are registered before this catch-all static app.
 app.mount("/", StaticFiles(directory=str(WEB_DIR), html=True), name="film-studio")
 
