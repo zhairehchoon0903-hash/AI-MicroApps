@@ -200,6 +200,78 @@ def create_project(payload: ProjectCreate) -> dict:
     }
 
 
+@app.get("/api/projects/{project_id}/preflight")
+def project_preflight(project_id: str) -> dict:
+    """Inspect real pipeline prerequisites without executing any production work."""
+    folder = _project_dir(project_id)
+    project_path = folder / "project.json"
+    if not project_path.is_file():
+        raise HTTPException(status_code=409, detail="Project metadata is missing.")
+    project = json.loads(project_path.read_text(encoding="utf-8"))
+    pipeline_type = project.get("pipeline_type")
+    try:
+        manifest = load_pipeline(pipeline_type)
+    except Exception as exc:
+        raise HTTPException(status_code=409, detail="The project's pipeline manifest is unavailable or invalid.") from exc
+
+    artifacts_dir = folder / "artifacts"
+    stage_results = []
+    for index, stage in enumerate(manifest.get("stages", []), start=1):
+        required = stage.get("required_artifacts_in", []) or []
+        optional = stage.get("optional_artifacts_in", []) or []
+        present = [name for name in required if (artifacts_dir / f"{name}.json").is_file()]
+        missing = [name for name in required if name not in present]
+        optional_present = [name for name in optional if (artifacts_dir / f"{name}.json").is_file()]
+        tools = sorted(set(stage.get("required_tools", [])) | set(stage.get("optional_tools", [])) | set(stage.get("preferred_tools", [])) | set(stage.get("fallback_tools", [])) | set(stage.get("tools_available", [])))
+        approval = bool(stage.get("human_approval_default", False))
+        stage_results.append({
+            "order": index,
+            "name": stage.get("name", f"stage-{index}"),
+            "checkpoint_required": bool(stage.get("checkpoint_required", False)),
+            "approval_required": approval,
+            "status": "missing_prerequisites" if missing else ("director_approval_required" if approval else "prerequisites_present"),
+            "required_artifacts": required,
+            "present_artifacts": present,
+            "missing_artifacts": missing,
+            "optional_artifacts": optional,
+            "optional_artifacts_present": optional_present,
+            "produces": stage.get("produces", []),
+            "tools": tools,
+            "review_focus": stage.get("review_focus", []),
+        })
+
+    orchestration = manifest.get("orchestration") or {}
+    studio_path = artifacts_dir / "film_studio.json"
+    studio = json.loads(studio_path.read_text(encoding="utf-8")) if studio_path.is_file() else {}
+    budget_cap = float((project.get("film_studio") or {}).get("budget_cap_usd", orchestration.get("budget_default_usd", 0)) or 0)
+    cost_path = folder / "cost_log.json"
+    cost = {"recorded": cost_path.is_file(), "spent_usd": 0.0, "reserved_usd": 0.0}
+    if cost_path.is_file():
+        try:
+            raw_cost = json.loads(cost_path.read_text(encoding="utf-8"))
+            entries = raw_cost.get("entries", []) if isinstance(raw_cost, dict) else []
+            cost["spent_usd"] = round(sum(float(e.get("actual_usd", 0) or 0) for e in entries if e.get("status") in ("completed", "failed")), 4)
+            cost["reserved_usd"] = round(sum(float(e.get("reserved_usd", 0) or 0) for e in entries if e.get("status") == "reserved"), 4)
+        except (ValueError, TypeError, AttributeError):
+            cost["recorded"] = False
+            cost["note"] = "Cost log exists but could not be read safely."
+    missing_count = sum(len(item["missing_artifacts"]) for item in stage_results)
+    approval_count = sum(1 for item in stage_results if item["approval_required"])
+    return {
+        "project_id": project_id,
+        "title": project.get("title", project_id),
+        "pipeline": {"id": pipeline_type, "name": manifest.get("name", pipeline_type), "version": manifest.get("version"), "stability": manifest.get("stability", "unknown")},
+        "production": {"mode": orchestration.get("mode", "manifest-driven"), "max_revisions_per_stage": orchestration.get("max_revisions_per_stage"), "max_send_backs": orchestration.get("max_send_backs"), "max_wall_time_minutes": orchestration.get("max_wall_time_minutes")},
+        "budget": {"cap_usd": budget_cap, **cost, "remaining_estimate_usd": round(budget_cap - cost["spent_usd"] - cost["reserved_usd"], 4)},
+        "summary": {"stage_count": len(stage_results), "stages_with_missing_artifacts": sum(1 for item in stage_results if item["missing_artifacts"]), "missing_required_artifacts": missing_count, "director_approval_gates": approval_count},
+        "stages": stage_results,
+        "saved_studio_data": {"script_present": bool(studio.get("script", "").strip()), "scene_count": len(studio.get("scenes", [])), "character_count": len(studio.get("characters", [])), "shot_count": len(studio.get("shots", []))},
+        "generation_enabled": False,
+        "execution_authorized": False,
+        "message": "Preflight only. No agents, paid tools, downloads, media generation, or renders were started."
+    }
+
+
 @app.get("/api/projects/{project_id}")
 def project_detail(project_id: str) -> dict:
     folder = _project_dir(project_id)
