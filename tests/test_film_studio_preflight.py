@@ -85,3 +85,22 @@ def test_preflight_unlocks_next_stage_only_after_approval_evidence(film_server):
     assert result["stages"][2]["present_artifacts"] == ["proposal_packet"]
     assert result["stages"][2]["status"] == "ready_for_stage"
     assert result["execution_authorized"] is False
+
+
+def test_capability_report_is_registry_summary_only(monkeypatch, film_server):
+    module, _checkpoints = film_server
+    from tools import tool_registry
+    monkeypatch.setattr(tool_registry.registry, "provider_menu_summary", lambda: {
+        "capabilities": [{"capability": "image_generation", "configured": 1, "total": 3,
+                          "available_providers": ["local-test"], "unavailable_providers": ["remote-a", "remote-b"]}],
+        "composition_runtimes": {"remotion": True},
+        "setup_offers": [],
+        "runtime_warnings": [],
+    })
+
+    result = module.capabilities()
+
+    assert result["capabilities"][0]["configured"] == 1
+    assert result["composition_runtimes"]["remotion"] is True
+    assert result["paid_calls_started"] is False
+    assert result["generation_enabled"] is False

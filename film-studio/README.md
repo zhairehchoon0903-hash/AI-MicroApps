@@ -35,6 +35,8 @@ Open the Production Engine, choose a project in **Production preflight**, and se
 
 The endpoint is `GET /api/projects/{project_id}/preflight`.
 
+The Production Engine also exposes `GET /api/capabilities`, backed by OpenMontage's `registry.provider_menu_summary()`. It reports locally discovered provider availability, composition runtimes, setup offers, and runtime warnings. This is dependency/configuration discovery only; it does not call a provider's `.execute()` method or make paid API requests.
+
 ## Safety boundary
 
 Creating a production project only scaffolds its folder and initial metadata. It does **not** launch an agent, call an AI provider, generate images/video/audio, download media, or render. The budget cap planning metadata, not a price quote. Generation and rendering require separate implementation, provider configuration, explicit director approval, and cost controls.
