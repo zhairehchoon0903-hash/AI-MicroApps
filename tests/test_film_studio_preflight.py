@@ -208,6 +208,9 @@ def test_cloud_agent_start_embeds_handoff_and_never_authorizes_paid_media(film_s
     assert captured["payload"]["base_ref"] == "feature/test"
     assert captured["payload"]["create_pull_request"] is False
     assert "A saved screenplay" in captured["payload"]["prompt"]
+    assert "Local Film Studio preflight report" in captured["payload"]["prompt"]
+    assert "Canonical checkpoint snapshot" in captured["payload"]["prompt"]
+    assert "Film direction" in captured["payload"]["prompt"]
     assert "Do not call paid AI providers" in captured["payload"]["prompt"]
     assert response.json()["task"]["paid_media_operations_authorized"] is False
     assert response.json()["task"]["generation_authorized"] is False

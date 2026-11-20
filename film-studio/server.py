@@ -704,18 +704,39 @@ def start_cloud_agent_task(project_id: str, body: AgentTaskStart) -> dict:
     if not connection.get("can_start"):
         raise HTTPException(status_code=409, detail=connection.get("reason", "The current branch is not approved for cloud agent work."))
     embedded_handoff = json.dumps(handoff, ensure_ascii=False, indent=2)
-    if len(embedded_handoff) > 50000 or len(session_prompt) > 30000:
-        raise HTTPException(status_code=413, detail="The project handoff is too large to send safely as one cloud-agent task. Reduce the script or project notes and prepare the handoff again.")
+    try:
+        local_preflight = project_preflight(project_id)
+        from lib.checkpoint import read_checkpoint
+        manifest = load_pipeline(str(handoff["project"].get("pipeline_id") or ""))
+        checkpoint_snapshot = {}
+        for stage in manifest.get("stages", []):
+            stage_name = stage.get("name") if isinstance(stage, dict) else None
+            if not stage_name:
+                continue
+            try:
+                checkpoint = read_checkpoint(PROJECTS_DIR, project_id, stage_name)
+            except Exception:
+                checkpoint = None
+            if checkpoint:
+                checkpoint_snapshot[stage_name] = checkpoint
+    except Exception as exc:
+        raise HTTPException(status_code=409, detail="The local preflight/checkpoint snapshot could not be prepared. Inspect project readiness before starting the cloud agent.") from exc
+    preflight_json = json.dumps(local_preflight, ensure_ascii=False, indent=2)
+    checkpoint_json = json.dumps(checkpoint_snapshot, ensure_ascii=False, indent=2)
+    if len(embedded_handoff) > 50000 or len(session_prompt) > 30000 or len(preflight_json) > 20000 or len(checkpoint_json) > 40000:
+        raise HTTPException(status_code=413, detail="The project handoff or checkpoint snapshot is too large to send safely as one cloud-agent task. Reduce the project notes or checkpoint payload and prepare the handoff again.")
     prompt = "\n".join([
         "# OpenMontage Film Studio — director-authorized cloud agent planning task",
         "This is a real GitHub Copilot Cloud Agent session. Work only in the supplied repository and on the requested base branch.",
         "", "## Strict task scope",
         "Perform a READ-ONLY audit and non-paid planning only. Do not edit, create, delete, or commit repository files. Do not open a pull request. Do not run production stages.",
         "Do not call paid AI providers, generate images/video/audio, download media, reserve or spend budget, or render. These actions are NOT authorized.",
-        "If local project files or canonical checkpoints are absent from the repository, explicitly report that limitation; do not invent their contents or checkpoint state.",
+        "The embedded local preflight report and checkpoint snapshot are the authoritative evidence for the project's current local checkpoint state. The cloud task cannot access the Codespace filesystem; if an artifact payload is absent from the embedded snapshot, report that limitation rather than inventing its contents.",
         "Read AGENTS.md, AGENT_GUIDE.md, the selected pipeline manifest, checkpoint protocol, and relevant stage-director skills before making recommendations.",
         "Report the actual available checkpoint position, next valid stage if evidence exists, blockers, and the exact non-paid next-step plan. Stop at every human approval gate.",
         "", "## Project-specific agent session instructions", session_prompt,
+        "", "## Local Film Studio preflight report (captured at task submission)", preflight_json,
+        "", "## Canonical checkpoint snapshot (captured through OpenMontage checkpoint reader)", checkpoint_json,
         "", "## Embedded director handoff (source of intent, not a canonical pipeline artifact)", embedded_handoff,
         "", "## Final response format",
         "Return: (1) repository and project state inspected, (2) evidence-backed checkpoint position or missing-data warning, (3) next valid stage, (4) blockers and director decisions needed, (5) non-paid plan. Confirm that no files were changed and no paid operations were attempted.",

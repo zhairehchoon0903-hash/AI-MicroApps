@@ -29,7 +29,7 @@ The server reads a user-authenticated token from `gh auth token` in memory. Alte
 
 ## Current safety scope
 
-The task receives the saved `agent_session.md` instructions and the director handoff JSON. It is explicitly limited to read-only repository inspection and non-paid planning. It must not edit or delete files, commit, open a pull request, run production stages, call paid providers, generate or download media, reserve budget, or render. If local project checkpoints are not present in the GitHub repository, it must report that limitation rather than inventing state.
+The task receives the saved `agent_session.md` instructions, director handoff JSON, and a live local preflight/checkpoint snapshot captured when it is submitted. The cloud task cannot access the Codespace filesystem directly, so embedded checkpoint data is the evidence for local state. It is explicitly limited to read-only repository inspection and non-paid planning. It must not edit or delete files, commit, open a pull request, run production stages, call paid providers, generate or download media, reserve budget, or render. If local project checkpoints are not present in the GitHub repository, it must report that limitation rather than inventing state.
 
 The Film Studio records the returned task ID in `projects/<project_id>/artifacts/cloud_agent_task.json`. Task status can be refreshed through the app. Connection checks do not start tasks, and the start endpoint requires explicit director confirmation.
 
