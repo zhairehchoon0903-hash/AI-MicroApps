@@ -1,0 +1,353 @@
+{
+  "film": {
+    "title": "THE LAST BLOODLINE",
+    "project_id": "the-last-bloodline",
+    "format": "feature-film",
+    "aspect_ratio": "16:9",
+    "fps": 30,
+    "language": "en",
+    "status": "preproduction",
+    "target_opening_duration_seconds": 360
+  },
+  "renderer": {
+    "package": "remotion-composer",
+    "composition_id": "CinematicRenderer",
+    "scene_schema": "remotion-composer/src/cinematic/types.ts",
+    "note": "The existing renderer assembles local video clips, title cards, soundtrack, music and captions. It does not generate source footage."
+  },
+  "visual_bible": {
+    "tone": [
+      "epic fantasy",
+      "mythic mystery",
+      "intimate emotional drama"
+    ],
+    "palette": {
+      "golden_age": "warm gold, ivory stone, living greens",
+      "fall": "embers, deep crimson, smoke black",
+      "present_ruins": "weathered stone, cold blue-grey, muted earth"
+    },
+    "camera_language": [
+      "slow aerial establishing shots",
+      "measured descending camera moves",
+      "intimate close-ups for emotional dialogue",
+      "restrained handheld movement during combat"
+    ],
+    "continuity": [
+      "Auren is primarily a swordsman; magic enhances and follows his sword technique.",
+      "Keep the ancient kingdom's architecture, royal emblem and banners consistent across all shots.",
+      "Keep the identity of the enemy and the full bloodline history unrevealed in the opening."
+    ]
+  },
+  "sequences": [
+    {
+      "id": "seq01-kingdom-before-fall",
+      "title": "The Kingdom Before the Fall",
+      "target_seconds": 75,
+      "narration": [
+        {
+          "at": 8,
+          "text": "Every kingdom believes its walls will outlive its enemies. Every king believes his name will outlive his grave."
+        },
+        {
+          "at": 49,
+          "text": "But kingdoms do not fall when their walls are broken. They fall when the people forget what they were built to protect."
+        }
+      ],
+      "shots": [
+        {
+          "id": "LB-001",
+          "duration": 12,
+          "type": "video",
+          "description": "A vast aerial reveal of the ancient kingdom in its golden age, mountains and waterfalls framing the royal capital.",
+          "camera": "ultra-wide aerial push-in",
+          "media": "assets/video/LB-001-kingdom-aerial.mp4",
+          "status": "awaiting-footage"
+        },
+        {
+          "id": "LB-002",
+          "duration": 10,
+          "type": "video",
+          "description": "The camera descends over marble bridges, towers and royal banners moving in a gentle morning wind.",
+          "camera": "descending crane / drone move",
+          "media": "assets/video/LB-002-capital-descent.mp4",
+          "status": "awaiting-footage"
+        },
+        {
+          "id": "LB-003",
+          "duration": 12,
+          "type": "video",
+          "description": "Ordinary citizens, merchants and children fill a sunlit market street; life feels safe and prosperous.",
+          "camera": "slow street-level tracking shot",
+          "media": "assets/video/LB-003-market-life.mp4",
+          "status": "awaiting-footage"
+        },
+        {
+          "id": "LB-004",
+          "duration": 12,
+          "type": "video",
+          "description": "A majestic view of the royal castle, its banners and emblem catching the sunlight.",
+          "camera": "low-angle architectural reveal",
+          "media": "assets/video/LB-004-royal-castle.mp4",
+          "status": "awaiting-footage"
+        },
+        {
+          "id": "LB-005",
+          "duration": 8,
+          "type": "video",
+          "description": "A child pauses as a distant bell rings; the smile fades and the street quiets.",
+          "camera": "intimate close-up, shallow depth of field",
+          "media": "assets/video/LB-005-bell-reaction.mp4",
+          "status": "awaiting-footage"
+        },
+        {
+          "id": "LB-006",
+          "duration": 5,
+          "type": "title",
+          "text": "A KINGDOM FORGOTTEN",
+          "status": "ready-for-render"
+        }
+      ]
+    },
+    {
+      "id": "seq02-the-fall",
+      "title": "The Night Everything Ended",
+      "target_seconds": 90,
+      "shots": [
+        {
+          "id": "LB-007",
+          "duration": 12,
+          "type": "video",
+          "description": "The capital at night as fire spreads across rooftops beneath a blood-red sky.",
+          "camera": "wide city panorama",
+          "media": "assets/video/LB-007-burning-capital.mp4",
+          "status": "awaiting-footage"
+        },
+        {
+          "id": "LB-008",
+          "duration": 10,
+          "type": "video",
+          "description": "Soldiers clash in smoke and fire; keep violence intense but readable, not gratuitous.",
+          "camera": "ground-level tracking",
+          "media": "assets/video/LB-008-battle-streets.mp4",
+          "status": "awaiting-footage"
+        },
+        {
+          "id": "LB-009",
+          "duration": 12,
+          "type": "video",
+          "description": "A wounded king stands before the throne as an old warrior enters carrying a bloodstained sword.",
+          "camera": "slow dolly into two-shot",
+          "media": "assets/video/LB-009-king-and-warrior.mp4",
+          "status": "awaiting-footage"
+        },
+        {
+          "id": "LB-010",
+          "duration": 18,
+          "type": "video",
+          "description": "The king entrusts the survival of the bloodline to the old warrior.",
+          "camera": "alternating close-ups, hold on the king's eyes",
+          "media": "assets/video/LB-010-the-bloodline-must-live.mp4",
+          "status": "awaiting-footage",
+          "dialogue": [
+            {
+              "character": "OLD WARRIOR",
+              "text": "My king. The eastern gate has fallen."
+            },
+            {
+              "character": "KING",
+              "text": "And the royal guard?"
+            },
+            {
+              "character": "OLD WARRIOR",
+              "text": "Your Majesty, the bloodline—"
+            },
+            {
+              "character": "KING",
+              "text": "Must live."
+            },
+            {
+              "character": "KING",
+              "text": "Even if the world remembers us as monsters... let the blood survive."
+            }
+          ]
+        },
+        {
+          "id": "LB-011",
+          "duration": 8,
+          "type": "video",
+          "description": "A palace explosion silhouettes the king and warrior; cut to black on the impact.",
+          "camera": "silhouette wide shot",
+          "media": "assets/video/LB-011-palace-fall.mp4",
+          "status": "awaiting-footage"
+        }
+      ]
+    },
+    {
+      "id": "seq03-the-forgotten-ruins",
+      "title": "The Kingdom Forgotten",
+      "target_seconds": 65,
+      "narration": [
+        {
+          "at": 0,
+          "text": "Time buried the kingdom. History buried its name. And the world learned to live as though it had never existed."
+        }
+      ],
+      "shots": [
+        {
+          "id": "LB-012",
+          "duration": 15,
+          "type": "video",
+          "description": "Centuries later: wind moves through broken pillars and overgrown palace ruins.",
+          "camera": "slow aerial drift",
+          "media": "assets/video/LB-012-ruins-aerial.mp4",
+          "status": "awaiting-footage"
+        },
+        {
+          "id": "LB-013",
+          "duration": 12,
+          "type": "video",
+          "description": "A weathered royal statue lies broken beside the remains of a throne room.",
+          "camera": "slow lateral dolly",
+          "media": "assets/video/LB-013-broken-statue.mp4",
+          "status": "awaiting-footage"
+        },
+        {
+          "id": "LB-014",
+          "duration": 14,
+          "type": "video",
+          "description": "Auren Vale walks alone along a mountain path toward the ruins, carrying his sword.",
+          "camera": "rear tracking shot, gradual reveal",
+          "media": "assets/video/LB-014-auren-arrives.mp4",
+          "status": "awaiting-footage"
+        },
+        {
+          "id": "LB-015",
+          "duration": 8,
+          "type": "video",
+          "description": "Auren stops as he hears his name whispered by an unseen presence.",
+          "camera": "close-up, subtle push-in",
+          "media": "assets/video/LB-015-auren-hears-whisper.mp4",
+          "status": "awaiting-footage",
+          "dialogue": [
+            {
+              "character": "WHISPER (V.O.)",
+              "text": "Auren..."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seq04-the-awakening",
+      "title": "Something Within Him",
+      "target_seconds": 65,
+      "shots": [
+        {
+          "id": "LB-016",
+          "duration": 14,
+          "type": "video",
+          "description": "Auren enters a ruined temple and approaches an ancient symbol carved into a stone monument.",
+          "camera": "wide-to-medium slow dolly",
+          "media": "assets/video/LB-016-temple-symbol.mp4",
+          "status": "awaiting-footage"
+        },
+        {
+          "id": "LB-017",
+          "duration": 12,
+          "type": "video",
+          "description": "His hand touches the symbol; flashes of a throne, burning crown and battlefield interrupt reality.",
+          "camera": "macro close-up into rapid vision inserts",
+          "media": "assets/video/LB-017-memory-flash.mp4",
+          "status": "awaiting-footage"
+        },
+        {
+          "id": "LB-018",
+          "duration": 8,
+          "type": "video",
+          "description": "Auren falls to one knee, shaken by a memory that does not belong to him.",
+          "camera": "tight handheld close-up",
+          "media": "assets/video/LB-018-what-was-that.mp4",
+          "status": "awaiting-footage",
+          "dialogue": [
+            {
+              "character": "UNKNOWN VOICE (V.O.)",
+              "text": "You were never supposed to find this place."
+            },
+            {
+              "character": "AUREN",
+              "text": "What was that?"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seq05-the-sword-remembers",
+      "title": "The Sword Remembers",
+      "target_seconds": 65,
+      "shots": [
+        {
+          "id": "LB-019",
+          "duration": 12,
+          "type": "video",
+          "description": "A hidden sanctuary reveals an ancient sword resting untouched at its center.",
+          "camera": "slow reveal from behind Auren",
+          "media": "assets/video/LB-019-ancient-sword-reveal.mp4",
+          "status": "awaiting-footage"
+        },
+        {
+          "id": "LB-020",
+          "duration": 12,
+          "type": "video",
+          "description": "A shadow creature attacks; Auren defends himself with disciplined swordsmanship and is driven backward.",
+          "camera": "dynamic but legible sword-fight coverage",
+          "media": "assets/video/LB-020-first-attack.mp4",
+          "status": "awaiting-footage"
+        },
+        {
+          "id": "LB-021",
+          "duration": 12,
+          "type": "video",
+          "description": "Auren takes the ancient sword; blue-white energy runs along the blade and follows his movements.",
+          "camera": "heroic medium shot into blade close-up",
+          "media": "assets/video/LB-021-sword-awakens.mp4",
+          "status": "awaiting-footage"
+        },
+        {
+          "id": "LB-022",
+          "duration": 8,
+          "type": "video",
+          "description": "The creature is defeated; Auren stares at the sword, frightened by what he has become.",
+          "camera": "quiet close-up after action",
+          "media": "assets/video/LB-022-what-am-i.mp4",
+          "status": "awaiting-footage",
+          "dialogue": [
+            {
+              "character": "AUREN",
+              "text": "What... am I?"
+            },
+            {
+              "character": "UNKNOWN VOICE (V.O.)",
+              "text": "The last bloodline."
+            }
+          ]
+        },
+        {
+          "id": "LB-023",
+          "duration": 8,
+          "type": "title",
+          "text": "THE LAST BLOODLINE",
+          "status": "ready-for-render"
+        }
+      ]
+    }
+  ],
+  "production_gates": {
+    "source_footage_required": true,
+    "character_reference_approval_required": true,
+    "dialogue_voice_casting_required": true,
+    "music_and_sound_approval_required": true,
+    "paid_generation_authorized": false,
+    "rendering_authorized": false
+  }
+}
