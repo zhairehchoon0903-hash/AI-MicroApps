@@ -133,3 +133,19 @@ def test_director_handoff_packages_planning_without_authorizing_execution(film_s
     assert all(value is False for key, value in handoff["authorization"].items() if key.endswith("_authorized"))
     saved = json.loads((tmp_path / "preflight-test" / "artifacts" / "director_handoff.json").read_text())
     assert saved["project"]["pipeline_id"] == "cinematic"
+
+
+
+def test_director_handoff_creates_agent_session_prompt_with_real_skill_paths(film_server, tmp_path):
+    module, _checkpoints = film_server
+    result = module.create_director_handoff("preflight-test")
+    handoff = result["handoff"]
+    prompt = result["agent_prompt"]
+
+    assert result["agent_prompt_path"] == "artifacts/agent_session.md"
+    assert "skills/pipelines/cinematic/proposal-director.md" in prompt
+    assert "AGENT_GUIDE.md" in prompt
+    assert "Paid operations: NOT authorized" in prompt
+    assert handoff["production_contract"]["stages"][1]["director_skill"] == "skills/pipelines/cinematic/proposal-director.md"
+    saved_prompt = (tmp_path / "preflight-test" / "artifacts" / "agent_session.md").read_text()
+    assert saved_prompt == prompt + "\n"

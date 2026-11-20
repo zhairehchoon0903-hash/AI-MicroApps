@@ -457,9 +457,11 @@ def create_director_handoff(project_id: str) -> dict:
     for stage in manifest.get("stages", []):
         if not isinstance(stage, dict) or not stage.get("name"):
             continue
+        skill_ref = str(stage.get("skill") or f"pipelines/{pipeline_id}/{stage['name']}-director").strip("/")
+        skill_path = skill_ref if skill_ref.endswith(".md") else f"skills/{skill_ref}.md"
         stages.append({
             "name": stage["name"],
-            "director_skill": stage.get("skill") or f"skills/pipelines/{pipeline_id}/{stage['name']}-director.md",
+            "director_skill": skill_path,
             "produces": stage.get("produces", []),
             "required_artifacts_in": stage.get("required_artifacts_in", []),
             "human_approval_required": bool(stage.get("human_approval_default", False)),
@@ -507,11 +509,50 @@ def create_director_handoff(project_id: str) -> dict:
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     _atomic_json(folder / "artifacts" / "director_handoff.json", handoff)
+    executive_skill = str((manifest.get("orchestration") or {}).get("skill", "") or "").strip("/")
+    executive_path = executive_skill if executive_skill.endswith(".md") else (f"skills/{executive_skill}.md" if executive_skill else "")
+    stage_skill_paths = [stage["director_skill"] for stage in stages]
+    reading_paths = ["AGENT_GUIDE.md", f"pipeline_defs/{pipeline_id}.yaml", "skills/meta/checkpoint-protocol.md"]
+    if executive_path:
+        reading_paths.append(executive_path)
+    reading_paths.extend(stage_skill_paths)
+    prompt_lines = [
+        "# OpenMontage agent session — director handoff",
+        "",
+        f"Project: {handoff['project']['title']} (`{project_id}`)",
+        f"Pipeline: `{pipeline_id}` (manifest version {manifest.get('version', 'unknown')})",
+        "",
+        "You are operating inside the OpenMontage repository/Codespace. First read `AGENTS.md` and `AGENT_GUIDE.md`; obey Rule Zero and the complete agent contract.",
+        "Read the following project instructions before taking action:",
+        *[f"- `{path}`" for path in dict.fromkeys(reading_paths)],
+        "",
+        f"Read the director's saved brief at `projects/{project_id}/artifacts/director_handoff.json` and the planning source at `projects/{project_id}/artifacts/film_studio.json`.",
+        "Treat the handoff as director intent, not as a canonical stage artifact. Validate and transform it into the schemas required by the selected pipeline; never copy it into a checkpoint as if it were a stage output.",
+        "",
+        "## Session boundaries",
+        "- Begin with a read-only audit of project state, provider readiness, budget, manifest, and checkpoints; use the existing registry and checkpoint utilities.",
+        "- The AI agent is the orchestrator. Python remains tools and persistence only; do not build a competing runner or bypass the manifest, skills, reviews, or checkpoints.",
+        "- This handoff does NOT authorize paid provider calls, media generation, downloads, or rendering. Do not start any of those actions.",
+        "- Prepare the next non-paid planning work and present the exact tool/provider/model/cost plan for approval before consequential execution.",
+        "- Stop at every manifest-required human approval gate and end the turn awaiting the director's response.",
+        "- Never switch providers, models, render runtimes, or creative direction without asking first.",
+        "- Preserve the project's existing checkpoints and artifacts; do not reset or overwrite unrelated work.",
+        "",
+        "## First task",
+        "Report the project's current checkpoint position and the next valid pipeline stage. Read that stage's director skill before proposing work. If the project has no checkpoints, explain that the pipeline starts at its first stage and prepare only the non-paid preflight/research plan; do not execute paid or generation tools.",
+        "",
+        "Director authorization: non-paid inspection/planning only. Paid operations: NOT authorized. Generation: NOT authorized. Rendering: NOT authorized.",
+    ]
+    agent_prompt = "\n".join(prompt_lines)
+    prompt_path = folder / "artifacts" / "agent_session.md"
+    prompt_path.write_text(agent_prompt + "\n", encoding="utf-8")
     return {
         "saved": True,
         "artifact_path": "artifacts/director_handoff.json",
+        "agent_prompt_path": "artifacts/agent_session.md",
+        "agent_prompt": agent_prompt,
         "handoff": handoff,
-        "message": "Director handoff prepared only. No agent, provider, paid operation, or render was started.",
+        "message": "Director handoff and agent-session prompt prepared. This does not start an agent or authorize paid operations, generation, downloads, or rendering.",
     }
 
 

@@ -46,6 +46,12 @@ Select a project in Production preflight and choose **Prepare director handoff**
 
 Endpoint: `POST /api/projects/{project_id}/director-handoff`. It only writes the local JSON package; it does not start an agent, reserve budget, call providers, generate media, download assets, or render. Execution and spending authorization remain false.
 
+## Agent-session handoff
+
+Preparing a director handoff also writes `projects/<project_id>/artifacts/agent_session.md`. The prompt names the exact repository guide, selected pipeline manifest, executive-producer skill (when declared), stage-director skills, checkpoint protocol, and project artifact paths. The **Copy agent session prompt** action copies these instructions for pasting into the OpenMontage coding-agent session in the Codespace. This is an explicit handoff to the agent host, not a claim that the Film Studio starts an agent process; the repository currently provides agent instructions and tools, not a callable agent-session server.
+
+The prompt authorizes read-only inspection and non-paid planning only. It expressly prohibits paid provider calls, generation, downloads, and rendering until separately approved. The selected pipeline manifest remains the authority for stage order and human-approval gates.
+
 ## Safety boundary
 
 Creating a production project only scaffolds its folder and initial metadata. It does **not** launch an agent, call an AI provider, generate images/video/audio, download media, or render. The budget cap planning metadata, not a price quote. Generation and rendering require separate implementation, provider configuration, explicit director approval, and cost controls.
