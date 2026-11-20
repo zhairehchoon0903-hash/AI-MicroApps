@@ -291,7 +291,7 @@ def test_local_agent_uses_read_only_copilot_tools_and_records_output(film_server
 
     assert response.status_code == 200
     assert response.json()["started"] is True
-    assert "--allow-tool=read" in captured["command"]
+    assert "--available-tools=read" in captured["command"]
     assert "--deny-tool=shell,write,url,memory" in captured["command"]
     assert "-p" not in captured["command"]
     assert fake_process.stdin.value == "read-only planning prompt"
@@ -300,6 +300,8 @@ def test_local_agent_uses_read_only_copilot_tools_and_records_output(film_server
     assert "--no-ask-user" in captured["command"]
     assert "--allow-all" not in captured["command"]
     assert "COPILOT_ALLOW_ALL" not in captured["environment"]
+    assert captured["environment"]["GITHUB_COPILOT_PROMPT_MODE_REPO_HOOKS"] == "false"
+    assert captured["environment"]["GITHUB_COPILOT_PROMPT_MODE_WORKSPACE_MCP"] == "false"
     assert response.json()["task"]["render_authorized"] is False
 
     status = client.get("/api/projects/preflight-test/local-agent-task")

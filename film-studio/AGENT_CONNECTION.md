@@ -26,7 +26,7 @@ The server checks the CLI executable/version without signing in or consuming usa
 
 ### Local task safety
 
-The server invokes Copilot CLI in non-interactive prompt mode with `--allow-tool=read`, `--deny-tool=shell,write,url,memory`, and `--no-ask-user`. It removes inherited `COPILOT_ALLOW_ALL` and `COPILOT_ASSISTED_APPROVAL` environment switches and does not use `--allow-all`. The task can read files but cannot run shell commands, modify files, fetch URLs, or write agent memory. Paid provider calls, media generation, downloads, budget reservations, and rendering are not authorized. Starting a task may consume Copilot AI credits or other metered usage under your plan.
+The server invokes Copilot CLI in non-interactive prompt mode with `--available-tools=read`, `--deny-tool=shell,write,url,memory`, and `--no-ask-user`. It also disables repository hooks, workspace MCP, and extensions for the prompt run. It removes inherited `COPILOT_ALLOW_ALL` and `COPILOT_ASSISTED_APPROVAL` environment switches and does not use `--allow-all`. The task can read files but cannot run shell commands, modify files, fetch URLs, or write agent memory. Paid provider calls, media generation, downloads, budget reservations, and rendering are not authorized. Starting a task may consume Copilot AI credits or other metered usage under your plan.
 
 Official references: [Install Copilot CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli) and [CLI programmatic reference](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-programmatic-reference).
 
