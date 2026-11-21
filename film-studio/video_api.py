@@ -223,19 +223,13 @@ def generate_video(project_id: str, payload: VideoGenerateRequest) -> dict:
     _validate_request(payload)
     if payload.confirm_generation is not True:
         raise HTTPException(status_code=400, detail="Explicit generation confirmation is required.")
+
+    # All spending checks happen BEFORE the provider receives a paid request.
     quote = _quote(payload, payload.provider_id)
     if quote["estimated_cost_usd"] > payload.approved_max_spend_usd:
         raise HTTPException(status_code=409, detail={"code": "SPEND_APPROVAL_REQUIRED", "quote": quote, "approved_max_spend_usd": payload.approved_max_spend_usd})
-    # One submission only. Never retry or silently switch providers after a paid request.
-    if payload.provider_id == "runway-dev":
-        provider_task_id, raw = _submit_runway(payload)
-    elif payload.provider_id == "fal-wan3":
-        provider_task_id, raw = _submit_fal(payload)
-    else:
-        raise HTTPException(status_code=400, detail="Unsupported provider.")
-    record = {"task_id": str(uuid.uuid4()), "provider_id": payload.provider_id, "provider_name": quote["provider_name"], "model": quote["model"], "provider_task_id": provider_task_id, "status": str(raw.get("status") or "PENDING").upper(), "prompt": payload.prompt, "start_image_url": payload.start_image_url, "duration_seconds": payload.duration_seconds, "aspect_ratio": payload.aspect_ratio, "resolution": payload.resolution, "audio": payload.audio, "quote": quote, "approved_max_spend_usd": payload.approved_max_spend_usd, "created_at": datetime.now(timezone.utc).isoformat(), "updated_at": datetime.now(timezone.utc).isoformat(), "output_url": None}
+
     tasks = _load_tasks(folder)
-    # Enforce the project's recorded production budget as well as the per-shot approval.
     project_path = folder / "project.json"
     try:
         project_meta = json.loads(project_path.read_text(encoding="utf-8"))
@@ -246,6 +240,16 @@ def generate_video(project_id: str, payload: VideoGenerateRequest) -> dict:
     remaining = max(0.0, project_budget - committed_estimate)
     if quote["estimated_cost_usd"] > remaining:
         raise HTTPException(status_code=409, detail={"code": "PROJECT_BUDGET_EXCEEDED", "project_budget_usd": project_budget, "committed_estimate_usd": round(committed_estimate, 4), "remaining_budget_usd": round(remaining, 4), "quote": quote})
+
+    # One submission only. Never retry or silently switch providers after a paid request.
+    if payload.provider_id == "runway-dev":
+        provider_task_id, raw = _submit_runway(payload)
+    elif payload.provider_id == "fal-wan3":
+        provider_task_id, raw = _submit_fal(payload)
+    else:
+        raise HTTPException(status_code=400, detail="Unsupported provider.")
+
+    record = {"task_id": str(uuid.uuid4()), "provider_id": payload.provider_id, "provider_name": quote["provider_name"], "model": quote["model"], "provider_task_id": provider_task_id, "status": str(raw.get("status") or "PENDING").upper(), "prompt": payload.prompt, "start_image_url": payload.start_image_url, "duration_seconds": payload.duration_seconds, "aspect_ratio": payload.aspect_ratio, "resolution": payload.resolution, "audio": payload.audio, "quote": quote, "approved_max_spend_usd": payload.approved_max_spend_usd, "created_at": datetime.now(timezone.utc).isoformat(), "updated_at": datetime.now(timezone.utc).isoformat(), "output_url": None}
     tasks.append(record)
     _save_tasks(folder, tasks)
     return {"task": {k: v for k, v in record.items() if k not in {"provider_task_id", "start_image_url"}}, "message": "Generation submitted once. Refresh task status to retrieve the result; retries require a new quote and approval."}
