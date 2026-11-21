@@ -74,3 +74,17 @@ The browser workspace currently stores its creative notes in local storage on th
 
 
 For GitHub Copilot Chat in Codespaces, the repository also provides the `/film-studio-agent` prompt in `.github/prompts/film-studio-agent.prompt.md`. After preparing a handoff, invoke that prompt and provide the project ID if it is not already clear. It reads the saved local project handoff and follows the repository's agent contract; it does not bypass approval gates.
+
+
+## Local AI Director (Ollama)
+
+The Script Room includes five text-only director roles: Story, Character, Scene, Shot, and Continuity. The adapter talks to Ollama through the Film Studio server; the browser never calls the model endpoint directly and no model/API secret is stored in browser code.
+
+1. Install Ollama on the **same computer or Codespace host** that runs `film-studio/server.py`.
+2. Start Ollama and download a chat model appropriate for the machine (for example, `ollama pull qwen2.5:7b`; smaller models need less memory but may produce weaker drafts).
+3. Start Film Studio with `python film-studio/server.py`, then open Script Room and select **Check local model**.
+4. Choose an installed model and director role, enter a task, then press **Generate draft** and confirm. Review the result before appending it to your script.
+
+The default endpoint is `http://127.0.0.1:11434`. An optional `OLLAMA_BASE_URL` may change the loopback port/address, but the server rejects non-loopback hosts so this feature cannot be pointed at an arbitrary remote URL. Ollama must therefore run in the same host environment as the Film Studio server; a Codespace cannot automatically reach Ollama running only on a separate phone or laptop. The adapter uses the local model only and reports $0 API cost; electricity, hardware, and any separate hosting charges are not included. It does not generate media, download assets, reserve budget, or render.
+
+The API exposes `GET /api/ai/status` (connection/model discovery only) and `POST /api/ai/director` (requires `confirm_generation: true`). Project notes are sent to the configured local Ollama instance only when the director explicitly confirms generation. The generated draft is returned for review and is not automatically written over existing project material.
