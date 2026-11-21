@@ -602,7 +602,7 @@ def project_detail(project_id: str) -> dict:
 def save_studio(project_id: str, payload: StudioSave) -> dict:
     folder = _project_dir(project_id)
     data = payload.data
-    allowed = {"script_title", "script", "scenes", "characters", "shots", "genre", "logline"}
+    allowed = {"script_title", "script", "scenes", "characters", "shots", "director_brief", "genre", "logline"}
     if set(data) - allowed:
         raise HTTPException(status_code=400, detail="Unsupported project fields.")
     try:
@@ -610,6 +610,8 @@ def save_studio(project_id: str, payload: StudioSave) -> dict:
             raise HTTPException(status_code=413, detail="Project notes exceed the 2 MB limit.")
     except (TypeError, ValueError) as exc:
         raise HTTPException(status_code=422, detail="Project data must be JSON serializable.") from exc
+    if "director_brief" in data and not isinstance(data["director_brief"], dict):
+        raise HTTPException(status_code=422, detail="director_brief must be an object.")
     for key in ("scenes", "characters", "shots"):
         if key in data and (not isinstance(data[key], list) or len(data[key]) > 2000):
             raise HTTPException(status_code=422, detail=f"{key} must be a list with at most 2000 entries.")
@@ -667,7 +669,7 @@ def create_director_handoff(project_id: str) -> dict:
             "budget_cap_usd": (project.get("film_studio") or {}).get("budget_cap_usd", studio.get("budget_cap_usd")),
         },
         "director_intent": {key: studio.get(key, default) for key, default in {
-            "script_title": "", "script": "", "scenes": [], "characters": [], "shots": []
+            "script_title": "", "script": "", "scenes": [], "characters": [], "shots": [], "director_brief": {}
         }.items()},
         "production_contract": {
             "pipeline_version": manifest.get("version"),
