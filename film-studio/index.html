@@ -47,8 +47,11 @@
           <section class="panel video-request-panel">
             <div class="eyebrow">SHOT GENERATOR</div><h2>Prepare a moving shot</h2>
             <label for="videoProject">PRODUCTION PROJECT</label><select id="videoProject"><option value="">Loading projects…</option></select>
+            <label for="videoShotSelect">SHOT PLANNER · OPTIONAL</label><select id="videoShotSelect"><option value="">Choose a planned shot to prefill the prompt</option></select>
             <label for="videoPrompt">MOTION & PERFORMANCE PROMPT</label><textarea id="videoPrompt" rows="5" maxlength="1000" placeholder="Describe visible character movement, facial expression, eye direction, gestures, camera movement, environment, cloth and hair motion. Keep the action specific and filmable."></textarea>
-            <label for="videoStartImage">STARTING FRAME · HTTPS IMAGE URL OR IMAGE DATA URI</label><textarea id="videoStartImage" rows="2" placeholder="https://… or data:image/png;base64,…"></textarea>
+            <label for="videoStartFile">UPLOAD STARTING FRAME · PNG / JPG / WEBP</label><input id="videoStartFile" type="file" accept="image/png,image/jpeg,image/webp"><p class="hint">The image is converted in your browser and sent directly to the server-side provider adapter. Keep files under 3.5 MB.</p>
+            <label for="videoStartImage">STARTING FRAME · HTTPS IMAGE URL OR IMAGE DATA URI</label><textarea id="videoStartImage" rows="2" placeholder="Upload a frame above, or paste https://… / data:image/…"></textarea>
+            <div id="videoFramePreview" class="video-frame-preview" hidden></div>
             <div class="video-fields"><div><label for="videoDuration">DURATION</label><select id="videoDuration"><option>5</option><option>3</option><option>4</option><option>6</option><option>8</option><option>10</option><option>2</option></select></div><div><label for="videoRatio">ASPECT RATIO</label><select id="videoRatio"><option value="9:16">9:16 · Reels</option><option value="16:9">16:9</option><option value="1:1">1:1</option></select></div><div><label for="videoResolution">RESOLUTION</label><select id="videoResolution"><option>720p</option><option>480p</option><option>1080p</option></select></div></div>
             <label class="video-check"><input id="videoAudio" type="checkbox"> Request generated audio when supported</label>
             <button class="primary" id="videoQuoteButton" type="button">Compare provider estimates</button>

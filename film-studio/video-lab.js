@@ -45,6 +45,7 @@
       if (preferred && list.some((p) => (p.project_id || p.id) === preferred)) select.value = preferred;
       selectedProject = select.value;
       await loadTasks();
+      await loadShots();
     } catch (error) {
       select.innerHTML = '<option value="">Could not load server projects</option>';
       setStatus('videoLabStatus', `Server connection required: ${error.message}`, 'error');
@@ -58,6 +59,48 @@
   async function loadProviders() {
     try { const data = await api('/api/video/providers'); providers = data.providers || []; renderProviders(); }
     catch (error) { $('videoLabStatus').textContent = `Could not inspect providers: ${error.message}`; }
+  }
+  async function loadShots() {
+    const select = $('videoShotSelect');
+    const projectId = $('videoProject').value;
+    if (!projectId) { select.innerHTML = '<option value="">Choose a production project first</option>'; return; }
+    try {
+      const data = await api(`/api/projects/${encodeURIComponent(projectId)}`);
+      const shots = data.studio?.shots || [];
+      select.innerHTML = '<option value="">Choose a planned shot to prefill the prompt</option>' + shots.map((shot, i) => `<option value="${i}">${safe(shot.title || `Shot ${i + 1}`)}</option>`).join('');
+      select.dataset.shots = JSON.stringify(shots);
+    } catch (error) {
+      select.innerHTML = `<option value="">Could not load shot plan: ${safe(error.message)}</option>`;
+    }
+  }
+  function usePlannedShot() {
+    const select = $('videoShotSelect');
+    if (!select.value) return;
+    let shots = []; try { shots = JSON.parse(select.dataset.shots || '[]'); } catch {}
+    const shot = shots[Number(select.value)]; if (!shot) return;
+    const parts = [
+      `Shot: ${shot.title || 'Untitled shot'}.`,
+      shot.scene ? `Scene: ${shot.scene}.` : '',
+      shot.framing ? `Framing: ${shot.framing}.` : '',
+      shot.movement ? `Camera movement: ${shot.movement}.` : '',
+      shot.description ? `Visual direction: ${shot.description}.` : '',
+      'Photorealistic cinematic character performance with natural body movement, believable facial expression and eye focus, physically plausible gestures, subtle hair and fabric motion, and coherent environmental movement. Preserve the approved character appearance and scene continuity.'
+    ].filter(Boolean);
+    $('videoPrompt').value = parts.join(' ').slice(0, 1000);
+  }
+  function handleFrameUpload(event) {
+    const file = event.target.files?.[0]; if (!file) return;
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) { setStatus('videoQuoteStatus', 'Choose a PNG, JPG, or WEBP image.', 'error'); event.target.value = ''; return; }
+    if (file.size > 3.5 * 1024 * 1024) { setStatus('videoQuoteStatus', 'This image is too large. Choose a file under 3.5 MB.', 'error'); event.target.value = ''; return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      $('videoStartImage').value = String(reader.result || '');
+      $('videoFramePreview').hidden = false;
+      $('videoFramePreview').innerHTML = `<img alt="Starting frame preview" src="${String(reader.result)}"><span>${safe(file.name)} · ${(file.size / 1024 / 1024).toFixed(2)} MB</span>`;
+      setStatus('videoQuoteStatus', 'Starting frame loaded. Compare providers when your shot prompt is ready.', 'success');
+    };
+    reader.onerror = () => setStatus('videoQuoteStatus', 'Could not read the selected image.', 'error');
+    reader.readAsDataURL(file);
   }
   function requestBody() {
     return {
@@ -129,7 +172,9 @@
     $('videoQuoteButton').addEventListener('click', compareQuotes);
     $('videoGenerateButton').addEventListener('click', generate);
     $('refreshVideoTasks').addEventListener('click', loadTasks);
-    $('videoProject').addEventListener('change', () => { selectedProject = $('videoProject').value; loadTasks(); quotes = []; selectedQuote = null; renderQuotes(); });
+    $('videoShotSelect').addEventListener('change', usePlannedShot);
+    $('videoStartFile').addEventListener('change', handleFrameUpload);
+    $('videoProject').addEventListener('change', () => { selectedProject = $('videoProject').value; loadTasks(); loadShots(); quotes = []; selectedQuote = null; renderQuotes(); });
     loadProviders(); loadProjects();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
