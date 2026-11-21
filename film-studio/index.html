@@ -18,6 +18,7 @@
     <button class="nav-item" data-view="scenes"><span>▦</span> Scene Board</button>
     <button class="nav-item" data-view="characters"><span>♙</span> Character Bible</button>
     <button class="nav-item" data-view="continuity"><span>✧</span> Character Continuity</button>
+    <button class="nav-item" data-view="scene-continuity"><span>⌖</span> Scene Continuity</button>
     <button class="nav-item" data-view="shots"><span>◉</span> Shot Planner</button>
     <button class="nav-item" data-view="video-lab"><span>▶</span> Video Lab</button>
     <button class="nav-item" data-view="production"><span>🎬</span> Production Engine</button>
@@ -93,6 +94,48 @@
           <div class="continuity-actions"><button class="secondary" id="continuityRefreshPrompt" type="button">Refresh prompt</button><button class="primary" id="continuityCopyPrompt" type="button">Copy prompt</button></div>
         </section>
       </section>
+      <section class="view" id="view-scene-continuity">
+        <div class="eyebrow">WORLD DESIGN · LOCATION MATCHING · SHOT-TO-SHOT CONTROL</div><h1>Scene Continuity Studio</h1>
+        <p class="sub">Keep locations visually consistent and track the details that must match from one shot to the next. Unknown worldbuilding stays blank until approved.</p>
+        <section class="panel continuity-toolbar"><div class="continuity-selects"><div><label for="sceneContinuityProject">FILM PROJECT</label><select id="sceneContinuityProject"></select></div><div><label for="sceneLocationSelect">LOCATION RECORD</label><select id="sceneLocationSelect"></select></div></div><p class="hint">Create one canonical record for each recurring place. Add only confirmed geography, architecture, landmarks, and environmental details.</p></section>
+        <div class="scene-continuity-grid">
+          <section class="panel continuity-panel"><div class="brief-heading"><div><span class="eyebrow">01 · CANONICAL ENVIRONMENT</span><h2>Location visual bible</h2><p class="hint">The location identity stays stable. Episode-specific weather, damage, time, and lighting belong in the variation notes.</p></div></div>
+            <label for="scLocationName">LOCATION / PLACE NAME</label><input id="scLocationName" maxlength="120" placeholder="Unconfirmed location — name it when established">
+            <label for="scLocationType">LOCATION TYPE & STATUS</label><input id="scLocationType" placeholder="Kingdom, village, forest, palace, road, interior…">
+            <label for="scGeography">GEOGRAPHY & SURROUNDINGS</label><textarea id="scGeography" rows="3" placeholder="Terrain, water, elevation, nearby features, orientation. Leave unknown details blank."></textarea>
+            <label for="scArchitecture">ARCHITECTURE, MATERIALS & DESIGN LANGUAGE</label><textarea id="scArchitecture" rows="3" placeholder="Building forms, construction materials, cultural design motifs, scale…"></textarea>
+            <label for="scLandmarks">RECOGNIZABLE LANDMARKS & SPATIAL LAYOUT</label><textarea id="scLandmarks" rows="3" placeholder="Distinctive landmarks, paths, entrances, exits, room layout, relative positions…"></textarea>
+            <label for="scPalette">COLOR PALETTE & TEXTURES</label><textarea id="scPalette" rows="2" placeholder="Confirmed recurring colors, surface textures, visual motifs…"></textarea>
+            <label for="scAtmosphere">BASE ATMOSPHERE, CLIMATE & SOUND</label><textarea id="scAtmosphere" rows="3" placeholder="Typical climate, vegetation, ambient sound, wind, wildlife…">
+            </textarea>
+            <label for="scLighting">DEFAULT LIGHTING & TIME CHARACTER</label><textarea id="scLighting" rows="2" placeholder="Typical light quality, sun direction, practical light sources…"></textarea>
+            <label for="scAvoid">LOCATION DETAILS THAT MUST NOT DRIFT</label><textarea id="scAvoid" rows="3" placeholder="Non-negotiable spatial facts, forbidden redesigns, unresolved facts to avoid inventing…"></textarea>
+            <div class="continuity-actions"><button class="secondary" id="scNewLocation" type="button">＋ New location</button><button class="primary" id="scSaveLocation" type="button">Save location bible</button></div><p id="scLocationStatus" class="hint" aria-live="polite">Choose a project to begin.</p>
+          </section>
+          <section class="panel continuity-panel"><div class="brief-heading"><div><span class="eyebrow">02 · REUSABLE ENVIRONMENT PROMPT</span><h2>Location-safe prompt</h2><p class="hint">Copy these approved visual facts into establishing shots and image-to-video prompts.</p></div></div>
+            <label for="scLocationPrompt">GENERATED LOCATION PROMPT</label><textarea id="scLocationPrompt" rows="15" readonly></textarea><div class="continuity-actions"><button class="secondary" id="scRefreshLocationPrompt" type="button">Refresh prompt</button><button class="primary" id="scCopyLocationPrompt" type="button">Copy prompt</button></div>
+          </section>
+        </div>
+        <section class="panel scene-ledger-panel"><div class="brief-heading"><div><span class="eyebrow">03 · SHOT-TO-SHOT MATCHING</span><h2>Continuity ledger</h2><p class="hint">Record what is true at this exact moment in the scene. Keep screen direction, character positions, props, costume, injuries, and power state consistent across adjacent shots.</p></div></div>
+          <div class="scene-continuity-grid"><div>
+            <label for="scLedgerScene">SCENE / SLUGLINE</label><input id="scLedgerScene" placeholder="Scene number and slugline">
+            <label for="scLedgerShot">SHOT / TAKE REFERENCE</label><input id="scLedgerShot" placeholder="Shot number, angle, or coverage ID">
+            <label for="scLedgerLocation">LOCATION</label><select id="scLedgerLocation"></select>
+            <label for="scLedgerTime">STORY DAY & TIME</label><input id="scLedgerTime" placeholder="Day number, time of day, elapsed time…">
+            <label for="scLedgerWeather">WEATHER, SEASON & LIGHT</label><textarea id="scLedgerWeather" rows="2" placeholder="Weather, wind, precipitation, season, light direction/intensity…"></textarea>
+            <label for="scLedgerBlocking">CHARACTER POSITIONS & SCREEN DIRECTION</label><textarea id="scLedgerBlocking" rows="3" placeholder="Who stands where, facing which direction, eyelines, movement axis, left/right screen position…"></textarea>
+            <label for="scLedgerCostume">COSTUME, PROPS & HANDS</label><textarea id="scLedgerCostume" rows="3" placeholder="Clothing state, held objects, which hand holds what, prop placement…"></textarea>
+          </div><div>
+            <label for="scLedgerCondition">INJURIES, DAMAGE & PHYSICAL CONDITION</label><textarea id="scLedgerCondition" rows="3" placeholder="Wounds, blood, dirt, fatigue, damaged objects, what has healed or changed…"></textarea>
+            <label for="scLedgerPowers">POWERS, WEAPONS & ABILITIES STATE</label><textarea id="scLedgerPowers" rows="3" placeholder="Weapons drawn/stowed, magic state, visible effects, limits, cooldown, sword continuity…"></textarea>
+            <label for="scLedgerEntryExit">ENTRANCES, EXITS & ACTION PROGRESSION</label><textarea id="scLedgerEntryExit" rows="3" placeholder="Who entered/exited, movement completed, exact action state at this frame…"></textarea>
+            <label for="scLedgerMatch">MATCH TO PREVIOUS / NEXT SHOT</label><textarea id="scLedgerMatch" rows="3" placeholder="What must match, what changes, screen direction, eyeline, prop handoff, action cut…"></textarea>
+            <label for="scLedgerNotes">CONTINUITY NOTES / OPEN QUESTIONS</label><textarea id="scLedgerNotes" rows="2" placeholder="Unresolved details, approvals needed, continuity risks…"></textarea>
+            <div class="continuity-actions"><button class="secondary" id="scClearLedger" type="button">Clear form</button><button class="primary" id="scSaveLedger" type="button">Add ledger entry</button></div>
+          </div></div>
+          <div class="ledger-heading"><h3>Saved continuity entries</h3><span id="scLedgerCount" class="tag">0 ENTRIES</span></div><div id="scLedgerList" class="scene-list"><div class="empty">No continuity entries yet.</div></div><p id="scLedgerStatus" class="hint" aria-live="polite">Entries are saved inside this film project on this device.</p>
+        </section>
+      </section>
       <section class="view" id="view-shots"><div class="eyebrow">CINEMATOGRAPHY & COVERAGE</div><h1>Shot planner</h1><p class="sub">Plan the visual language before generating or filming a frame.</p><div class="scene-toolbar"><select id="shotProjectSelect"></select><button class="primary" id="addShot">＋ Add shot</button></div><div id="shotList" class="shot-list"></div></section>
       <section class="view" id="view-video-lab">
         <div class="eyebrow">AI VIDEO GENERATION · MULTI-PROVIDER</div>
@@ -131,5 +174,5 @@
   </main>
 </div>
 <dialog id="projectDialog"><form method="dialog" id="projectForm"><div class="eyebrow">START SOMETHING MEANINGFUL</div><h2>New film project</h2><label for="projectName">FILM TITLE</label><input id="projectName" required maxlength="90" placeholder="e.g. The Last Bloodline"><label for="projectGenre">GENRE / STYLE</label><select id="projectGenre"><option>Fantasy</option><option>Drama</option><option>Documentary</option><option>Action / Adventure</option><option>Animation</option><option>Other</option></select><label for="projectLogline">THE STORY IN ONE SENTENCE</label><textarea id="projectLogline" rows="3" placeholder="What is this film about?"></textarea><div class="dialog-actions"><button class="secondary" value="cancel">Cancel</button><button class="primary" id="createProject" value="default">Create project</button></div></form></dialog>
-<script src="./production.js"></script><script src="./app.js"></script><script src="./episode-director.js"></script><script src="./character-continuity.js"></script><script src="./video-lab.js"></script>
+<script src="./production.js"></script><script src="./app.js"></script><script src="./episode-director.js"></script><script src="./character-continuity.js"></script><script src="./scene-continuity.js"></script><script src="./video-lab.js"></script>
 </body></html>
