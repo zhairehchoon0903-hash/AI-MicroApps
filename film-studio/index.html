@@ -17,6 +17,7 @@
       <button class="nav-item" data-view="episode-director"><span>🎞</span> Episode Director</button>
     <button class="nav-item" data-view="scenes"><span>▦</span> Scene Board</button>
     <button class="nav-item" data-view="characters"><span>♙</span> Character Bible</button>
+    <button class="nav-item" data-view="continuity"><span>✧</span> Character Continuity</button>
     <button class="nav-item" data-view="shots"><span>◉</span> Shot Planner</button>
     <button class="nav-item" data-view="video-lab"><span>▶</span> Video Lab</button>
     <button class="nav-item" data-view="production"><span>🎬</span> Production Engine</button>
@@ -56,6 +57,42 @@
       </section>
       <section class="view" id="view-scenes"><div class="eyebrow">STORY STRUCTURE</div><h1>Scene board</h1><p class="sub">Break the screenplay into dramatic moments.</p><div class="scene-toolbar"><select id="sceneProjectSelect"></select><button class="primary" id="addScene">＋ Add scene</button></div><div id="sceneList" class="scene-list"></div></section>
       <section class="view" id="view-characters"><div class="eyebrow">CHARACTER DESIGN & CONTINUITY</div><h1>Character bible</h1><p class="sub">Record who each character is and how they must remain visually and emotionally consistent.</p><div class="scene-toolbar"><select id="characterProjectSelect"></select><button class="primary" id="addCharacter">＋ Add character</button></div><div id="characterList" class="character-grid"></div></section>
+      <section class="view" id="view-continuity">
+        <div class="eyebrow">VISUAL IDENTITY · AGE PROGRESSION · REFERENCE CONTROL</div><h1>Character Continuity Studio</h1>
+        <p class="sub">Keep each character recognizable across scenes, outfits, camera angles, and years of story progression. Identity anchors remain separate from age-specific changes.</p>
+        <section class="panel continuity-toolbar">
+          <div class="continuity-selects"><div><label for="continuityProject">FILM PROJECT</label><select id="continuityProject"></select></div><div><label for="continuityCharacter">CHARACTER</label><select id="continuityCharacter"></select></div><div><label for="continuityAge">LIFE STAGE</label><select id="continuityAge"><option value="baby">Baby / Infant</option><option value="child">Child</option><option value="teen">Teenager</option><option value="adult">Adult</option><option value="older_adult">Older Adult</option></select></div></div>
+          <p class="hint">The same character record holds every life stage. Changing the selected stage changes only that stage's appearance notes and reference image.</p>
+        </section>
+        <div class="continuity-grid">
+          <section class="panel continuity-panel"><div class="brief-heading"><div><span class="eyebrow">01 · IDENTITY THAT MUST SURVIVE TIME</span><h2>Permanent identity anchors</h2><p class="hint">Describe the features that remain recognizable as the character ages. Leave unknown details blank; do not invent canon.</p></div></div>
+            <label for="continuityName">CHARACTER NAME</label><input id="continuityName" readonly>
+            <label for="continuityFace">FACE & FACIAL STRUCTURE</label><textarea id="continuityFace" rows="2" placeholder="Face shape, jaw, nose, facial proportions — only confirmed design details"></textarea>
+            <label for="continuityEyes">EYES</label><textarea id="continuityEyes" rows="2" placeholder="Eye shape, color, distinctive gaze"></textarea>
+            <label for="continuityHair">HAIR IDENTITY</label><textarea id="continuityHair" rows="2" placeholder="Natural color, texture, hairline or distinctive style"></textarea>
+            <label for="continuityMarks">DISTINCTIVE MARKS & FEATURES</label><textarea id="continuityMarks" rows="2" placeholder="Scars, birthmarks, symbols, unusual features, or 'none established'"></textarea>
+            <label for="continuityBuild">BODY & SILHOUETTE</label><textarea id="continuityBuild" rows="2" placeholder="Stable proportions or silhouette traits; allow realistic age-related growth"></textarea>
+            <label for="continuityPalette">IDENTITY COLOR PALETTE</label><input id="continuityPalette" placeholder="Confirmed recurring colors, if any">
+            <label for="continuityKeep">MUST ALWAYS REMAIN CONSISTENT</label><textarea id="continuityKeep" rows="3" placeholder="The non-negotiable identity details that must persist in every depiction"></textarea>
+            <label for="continuityAvoid">MUST NEVER DRIFT INTO</label><textarea id="continuityAvoid" rows="2" placeholder="Contradictory traits, unwanted redesigns, accidental changes"></textarea>
+          </section>
+          <section class="panel continuity-panel"><div class="brief-heading"><div><span class="eyebrow">02 · THE CHARACTER AT THIS AGE</span><h2>Life-stage design</h2><p class="hint">A character should mature naturally. Keep identity anchors while allowing age-appropriate changes in height, proportions, voice, and bearing.</p></div><span id="continuityStageTag" class="tag">BABY / INFANT</span></div>
+            <label for="continuityAgeNotes">AGE-SPECIFIC APPEARANCE & PERFORMANCE</label><textarea id="continuityAgeNotes" rows="5" placeholder="Age range, height/build for this stage, age-appropriate facial proportions, movement, expression, voice, posture, and mannerisms"></textarea>
+            <label for="continuityCostume">COSTUME & PROPS AT THIS STAGE</label><textarea id="continuityCostume" rows="3" placeholder="Clothing, materials, recurring objects, and details that belong only to this stage"></textarea>
+            <label for="continuityStageChanges">WHAT HAS CHANGED SINCE THE PREVIOUS STAGE?</label><textarea id="continuityStageChanges" rows="3" placeholder="Growth and development. Do not change permanent identity anchors."></textarea>
+            <div class="reference-head"><div><label for="continuityReference">VISUAL REFERENCE IMAGE</label><p class="hint">Optional. Stored with this project's character record; resized locally before saving.</p></div><span class="tag">LOCAL REFERENCE</span></div>
+            <input id="continuityReference" type="file" accept="image/png,image/jpeg,image/webp">
+            <div id="continuityReferencePreview" class="continuity-reference-preview"><div class="empty">No reference image saved for this life stage.</div></div>
+            <div class="continuity-actions"><button class="secondary" id="continuityRemoveReference" type="button">Remove stage reference</button><button class="primary" id="continuitySave" type="button">Save character continuity</button></div>
+            <p id="continuityStatus" class="hint" aria-live="polite">Choose a film and character to begin.</p>
+          </section>
+        </div>
+        <section class="panel continuity-prompt-panel"><div class="brief-heading"><div><span class="eyebrow">03 · REUSABLE VISUAL GENERATION INSTRUCTIONS</span><h2>Continuity-safe character prompt</h2><p class="hint">Builds a text prompt from the approved identity anchors and selected life-stage details. It does not generate an image or spend credits.</p></div></div>
+          <label for="continuityNegative">NEGATIVE PROMPT / DETAILS TO AVOID</label><textarea id="continuityNegative" rows="2" placeholder="Unwanted changes, inconsistent facial features, extra limbs, age-inappropriate proportions, costume drift"></textarea>
+          <label for="continuityPromptOutput">GENERATED CHARACTER PROMPT</label><textarea id="continuityPromptOutput" rows="9" readonly></textarea>
+          <div class="continuity-actions"><button class="secondary" id="continuityRefreshPrompt" type="button">Refresh prompt</button><button class="primary" id="continuityCopyPrompt" type="button">Copy prompt</button></div>
+        </section>
+      </section>
       <section class="view" id="view-shots"><div class="eyebrow">CINEMATOGRAPHY & COVERAGE</div><h1>Shot planner</h1><p class="sub">Plan the visual language before generating or filming a frame.</p><div class="scene-toolbar"><select id="shotProjectSelect"></select><button class="primary" id="addShot">＋ Add shot</button></div><div id="shotList" class="shot-list"></div></section>
       <section class="view" id="view-video-lab">
         <div class="eyebrow">AI VIDEO GENERATION · MULTI-PROVIDER</div>
@@ -94,5 +131,5 @@
   </main>
 </div>
 <dialog id="projectDialog"><form method="dialog" id="projectForm"><div class="eyebrow">START SOMETHING MEANINGFUL</div><h2>New film project</h2><label for="projectName">FILM TITLE</label><input id="projectName" required maxlength="90" placeholder="e.g. The Last Bloodline"><label for="projectGenre">GENRE / STYLE</label><select id="projectGenre"><option>Fantasy</option><option>Drama</option><option>Documentary</option><option>Action / Adventure</option><option>Animation</option><option>Other</option></select><label for="projectLogline">THE STORY IN ONE SENTENCE</label><textarea id="projectLogline" rows="3" placeholder="What is this film about?"></textarea><div class="dialog-actions"><button class="secondary" value="cancel">Cancel</button><button class="primary" id="createProject" value="default">Create project</button></div></form></dialog>
-<script src="./production.js"></script><script src="./app.js"></script><script src="./episode-director.js"></script><script src="./video-lab.js"></script>
+<script src="./production.js"></script><script src="./app.js"></script><script src="./episode-director.js"></script><script src="./character-continuity.js"></script><script src="./video-lab.js"></script>
 </body></html>
