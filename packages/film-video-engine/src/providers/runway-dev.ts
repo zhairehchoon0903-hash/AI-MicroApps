@@ -63,6 +63,12 @@ export class RunwayDevProvider implements VideoProvider {
 
   async quote(request: VideoGenerationRequest): Promise<VideoQuote> {
     const modelId = request.model ?? this.model;
+    if (modelId !== this.model) {
+      throw new VideoEngineError(
+        `No price configuration exists for model "${modelId}". Configure a separate provider instance and rate before using it.`,
+        "MODEL_PRICE_NOT_CONFIGURED",
+      );
+    }
     const estimatedCostUsd = Number((this.options.priceUsdPerSecond * request.durationSeconds).toFixed(4));
     return {
       providerId: this.id,
@@ -77,7 +83,6 @@ export class RunwayDevProvider implements VideoProvider {
   }
 
   async generate(request: VideoGenerationRequest): Promise<VideoTask> {
-    const quote = await this.quote(request);
     const response = await this.fetchImpl(`${API_BASE}/v1/image_to_video`, {
       method: "POST",
       headers: this.headers(),
