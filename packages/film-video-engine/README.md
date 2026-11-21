@@ -4,28 +4,40 @@ A server-side, provider-neutral video generation layer for the Film Studio.
 
 ## Why this package exists
 
-The editor, screenplay, character bible, shot list, continuity records, and Remotion renderer must not depend on one generation vendor. This package defines one contract for video providers and includes a first working adapter for the Runway Dev API. Additional adapters can be registered without changing the editor or renderer.
+The editor, screenplay, character bible, shot list, continuity records, and Remotion renderer must not depend on one generation vendor. This package defines one contract for video providers and includes adapters for Runway Dev and fal.ai's Wan 3.0 image-to-video endpoint. Additional adapters can be registered without changing the editor or renderer.
 
 This is a server-side package. Never expose provider API keys in browser code.
 
-## First provider: Runway Dev
+## Providers
+
+### Runway Dev
 
 Runway Dev is separate from the consumer Runway subscription and the connected ChatGPT Runway workspace. It uses a developer API key and pay-as-you-go credits. A connected consumer Free plan does not grant Dev API credits.
 
-Configure these environment variables on the server:
+Configure on the server:
 
-- `RUNWAYML_API_SECRET` — API secret from Runway Dev.
-- `RUNWAY_DEV_PRICE_USD_PER_SECOND` — current per-second rate for the selected model and settings. Keep this value current with the official pricing page; do not assume a permanent price.
-- `RUNWAY_DEV_MODEL` — optional model id; defaults to `gen4.5`.
+- `RUNWAYML_API_SECRET`
+- `RUNWAY_DEV_MODEL` (defaults to `gen4.5`)
+- `RUNWAY_DEV_RESOLUTION` (defaults to `720p`)
+- `RUNWAY_DEV_PRICE_USD_PER_SECOND` — current rate for that exact model/settings combination
 
-The adapter calls `POST https://api.dev.runwayml.com/v1/image_to_video` and polls `GET /v1/tasks/{id}`. It sends the required `X-Runway-Version: 2024-11-06` header.
+The adapter calls `POST https://api.dev.runwayml.com/v1/image_to_video` and polls `GET /v1/tasks/{id}`. It sends `X-Runway-Version: 2024-11-06`. The 9:16 Reels ratio maps to `720:1280`.
 
-The vertical Reels ratio maps to Runway's `720:1280` ratio. The direct image-to-video endpoint currently accepts integer durations from 2 to 10 seconds.
+### fal.ai — Wan 3.0
+
+Configure on the server:
+
+- `FAL_KEY`
+- `FAL_WAN3_PRICE_480P`
+- `FAL_WAN3_PRICE_720P`
+- `FAL_WAN3_PRICE_1080P`
+
+The price variables are USD per generated second and must be kept aligned with the live endpoint pricing. The adapter uses fal's queue API at `https://queue.fal.run/alibaba/wan-3.0/image-to-video`, then retrieves the result after the task completes. It supports vertical 9:16 output and selectable 480p, 720p, and 1080p.
 
 ## Safe generation flow
 
-1. The UI calls `engine.quote(request, providerId)` and displays the estimated cost.
-2. The user explicitly approves a maximum spend for that generation.
+1. The UI calls `engine.quoteAll(request)` and displays available provider quotes.
+2. The user selects a provider and explicitly approves a maximum spend for that generation.
 3. The server calls `engine.generate(request, providerId, approvedMaxSpendUsd)`.
 4. The engine recalculates the quote immediately before submission and refuses if the estimate exceeds the approved ceiling.
 5. The editor stores the provider task id and polls `getTask`; it does not block a web request while a video renders.
@@ -39,13 +51,15 @@ Implement the `VideoProvider` interface in `src/types.ts`, then register it with
 ## Current scope
 
 - Provider interface and registry
-- Per-provider quote and cost ceiling
-- Explicit approval ceiling before a paid generation
+- Quote comparison across configured providers
+- Per-provider cost estimates and explicit approval ceiling
 - Runway Dev image-to-video adapter
+- fal.ai Wan 3.0 image-to-video adapter
 - Task status normalization
-- No API key, purchase, or generation is performed by this package until the server is configured and the user approves a quoted generation
+- No API key, purchase, or generation is performed until the server is configured and the user approves a quoted generation
 
 Official references:
 - https://docs.dev.runwayml.com/api/
 - https://docs.dev.runwayml.com/guides/pricing/
-- https://docs.dev.runwayml.com/model-routers/
+- https://fal.ai/models/alibaba/wan-3.0/image-to-video/api
+- https://fal.ai/docs/api-reference/inference-api/queue/submit-path

@@ -1,4 +1,5 @@
 export type AspectRatio = "9:16" | "16:9" | "1:1";
+export type VideoResolution = "480p" | "720p" | "1080p";
 
 export type VideoTaskStatus =
   | "PENDING"
@@ -12,6 +13,8 @@ export interface VideoGenerationRequest {
   startImageUrl: string;
   durationSeconds: number;
   aspectRatio: AspectRatio;
+  resolution?: VideoResolution;
+  audio?: boolean;
   model?: string;
   /** Optional project/shot labels. Never put end-user personal information here. */
   tags?: string[];
@@ -24,6 +27,7 @@ export interface VideoQuote {
   currency: "USD";
   durationSeconds: number;
   aspectRatio: AspectRatio;
+  resolution: VideoResolution;
   pricingBasis: string;
   notes?: string[];
 }

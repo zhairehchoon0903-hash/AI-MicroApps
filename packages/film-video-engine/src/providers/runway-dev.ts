@@ -3,6 +3,7 @@ import type {
   VideoGenerationRequest,
   VideoProvider,
   VideoQuote,
+  VideoResolution,
   VideoTask,
   VideoTaskStatus,
 } from "../types.js";
@@ -15,6 +16,7 @@ export interface RunwayDevProviderOptions {
   apiKey: string;
   priceUsdPerSecond: number;
   model?: string;
+  resolution?: VideoResolution;
   fetchImpl?: typeof fetch;
 }
 
@@ -51,6 +53,7 @@ export class RunwayDevProvider implements VideoProvider {
 
   private readonly fetchImpl: typeof fetch;
   private readonly model: string;
+  private readonly resolution: VideoResolution;
 
   constructor(private readonly options: RunwayDevProviderOptions) {
     if (!options.apiKey.trim()) throw new VideoEngineError("RUNWAYML_API_SECRET is required.", "MISSING_PROVIDER_KEY");
@@ -59,13 +62,15 @@ export class RunwayDevProvider implements VideoProvider {
     }
     this.fetchImpl = options.fetchImpl ?? fetch;
     this.model = options.model ?? "gen4.5";
+    this.resolution = options.resolution ?? "720p";
   }
 
   async quote(request: VideoGenerationRequest): Promise<VideoQuote> {
     const modelId = request.model ?? this.model;
-    if (modelId !== this.model) {
+    const resolution = request.resolution ?? this.resolution;
+    if (modelId !== this.model || resolution !== this.resolution) {
       throw new VideoEngineError(
-        `No price configuration exists for model "${modelId}". Configure a separate provider instance and rate before using it.`,
+        `No price configuration exists for ${modelId} at ${resolution}. Configure a separate provider instance and rate before using it.`,
         "MODEL_PRICE_NOT_CONFIGURED",
       );
     }
@@ -77,8 +82,9 @@ export class RunwayDevProvider implements VideoProvider {
       currency: "USD",
       durationSeconds: request.durationSeconds,
       aspectRatio: request.aspectRatio,
+      resolution,
       pricingBasis: `Configured rate $${this.options.priceUsdPerSecond.toFixed(4)} per output second × ${request.durationSeconds} seconds.`,
-      notes: ["The server administrator must keep RUNWAY_DEV_PRICE_USD_PER_SECOND aligned with the selected model and settings."],
+      notes: ["The server administrator must keep the configured rate aligned with the selected model and settings."],
     };
   }
 
