@@ -1,0 +1,7 @@
+{
+  "name": "@film-studio/video-engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Provider-neutral server-side AI video generation engine for Film Studio"
+}

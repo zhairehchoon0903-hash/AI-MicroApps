@@ -32,6 +32,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from backlot.state import PROJECTS_DIR, list_projects, load_board_state
 from lib.pipeline_loader import list_pipelines, load_pipeline
+from video_api import router as video_generation_router
 
 app = FastAPI(title="OpenMontage Film Studio API", version="0.1.0")
 PROJECT_ID = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
@@ -1074,6 +1075,8 @@ def get_cloud_agent_task_status(project_id: str) -> dict:
     _atomic_json(metadata_path, record)
     return {"task": record, "refreshed": True, "message": "Latest Copilot Cloud Agent task status retrieved."}
 
+
+app.include_router(video_generation_router)
 
 # API routes are registered before this catch-all static app.
 app.mount("/", StaticFiles(directory=str(WEB_DIR), html=True), name="film-studio")
